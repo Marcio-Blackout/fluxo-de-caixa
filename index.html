@@ -2,37 +2,452 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Fluxo de Caixa | Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Fluxo de Caixa</title>
     <style>
-        /* Cole aqui TODO o CSS do arquivo anterior */
-        /* Use Ctrl+C e Ctrl+V do CSS completo que enviei antes */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0e1a;
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+        
+        .status.offline .status-dot {
+            background: #ef4444;
+        }
+        
+        .balance-card {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .balance-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .balance-value {
+            font-size: 42px;
+            font-weight: 800;
+            margin-top: 10px;
+        }
+        
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .card-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+        
+        .card-value {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        .card:nth-child(1) .card-value { color: #10b981; }
+        .card:nth-child(2) .card-value { color: #60a5fa; }
+        .card:nth-child(3) .card-value { color: #f59e0b; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        th {
+            text-align: left;
+            padding: 15px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #666;
+            background: rgba(255,255,255,0.05);
+        }
+        
+        td {
+            padding: 15px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            font-size: 14px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .badge-pix { background: rgba(16,185,129,0.2); color: #10b981; }
+        .badge-card { background: rgba(96,165,250,0.2); color: #60a5fa; }
+        .badge-cash { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            color: white;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #1a1f2e;
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .modal h2 {
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-cancel {
+            flex: 1;
+            padding: 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: transparent;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        
+        .btn-save {
+            flex: 2;
+            padding: 14px;
+            background: #4f46e5;
+            border: none;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 600px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .balance-value {
+                font-size: 32px;
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loading">
-        <div class="spinner"></div>
-    </div>
-
-    <main>
-        <!-- Connection Status -->
-        <div class="connection-status" id="connectionStatus">
-            <span class="status-dot"></span>
-            <span>Conectando ao Google Sheets...</span>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Fluxo de Caixa</h1>
+            <div class="status" id="status">
+                <span class="status-dot"></span>
+                <span id="statusText">Conectando...</span>
+            </div>
         </div>
 
-        <!-- Resto do HTML... -->
-    </main>
+        <div class="balance-card">
+            <div class="balance-label">💎 Saldo Disponível</div>
+            <div class="balance-value" id="balance">R$ 0,00</div>
+        </div>
 
-    <!-- Modal e Scripts -->
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-label">📱 Pix</div>
+                <div class="card-value" id="pix">R$ 0,00</div>
+            </div>
+            <div class="card">
+                <div class="card-label">💳 Cartão</div>
+                <div class="card-value" id="card">R$ 0,00</div>
+            </div>
+            <div class="card">
+                <div class="card-label">💵 Dinheiro</div>
+                <div class="card-value" id="cash">R$ 0,00</div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Descrição</th>
+                    <th>Forma</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody id="rows">
+                <tr>
+                    <td colspan="4" style="text-align:center;padding:30px;color:#666;">
+                        Carregando...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button class="btn" onclick="openModal()">＋ Nova Entrada</button>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2>✨ Nova Entrada</h2>
+            <form onsubmit="saveEntry(event)">
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" id="desc" required placeholder="Ex: Venda realizada">
+                </div>
+                <div class="form-group">
+                    <label>Forma de Pagamento</label>
+                    <select id="method" required>
+                        <option value="Pix">📱 Pix</option>
+                        <option value="Cartão">💳 Cartão</option>
+                        <option value="Dinheiro no balcão">💵 Dinheiro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="number" id="amount" required placeholder="0,00" step="0.01" min="0.01">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-save">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        // ⚠️ COLE AQUI A URL DO SEU WEB APP
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyourzdLXQYAlyQxWiSmLXyerHOv6CS3W8BLQbkOGrss7D-TiO7qfqafLO5l_gqLlY/exec';
+        // ⚠️ SUBSTITUA PELA SUA URL REAL:
+        const URL = 'https://script.google.com/macros/s/AKfycbyourzdLXQYAlyQxWiSmLXyerHOv6CS3W8BLQbkOGrss7D-TiO7qfqafLO5l_gqLlY/exec';
         
-        // Resto do JavaScript que vou te passar abaixo...
+        const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        function updateStatus(online) {
+            const status = document.getElementById('status');
+            const text = document.getElementById('statusText');
+            
+            if (online) {
+                status.className = 'status';
+                text.textContent = 'Conectado';
+            } else {
+                status.className = 'status offline';
+                text.textContent = 'Offline';
+            }
+        }
+
+        async function loadData() {
+            try {
+                console.log('🔄 Buscando dados de:', URL + '?action=getData');
+                
+                const response = await fetch(URL + '?action=getData');
+                console.log('📡 Resposta:', response);
+                
+                const data = await response.json();
+                console.log('📊 Dados recebidos:', data);
+                
+                if (data.error) {
+                    console.error('❌ Erro nos dados:', data.error);
+                    updateStatus(false);
+                    return;
+                }
+                
+                // Atualiza interface
+                document.getElementById('balance').textContent = fmt(data.totals.geral);
+                document.getElementById('pix').textContent = fmt(data.totals.pix);
+                document.getElementById('card').textContent = fmt(data.totals.cartao);
+                document.getElementById('cash').textContent = fmt(data.totals.dinheiro);
+                
+                // Tabela
+                const rows = document.getElementById('rows');
+                if (data.entries.length === 0) {
+                    rows.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:#666;">Nenhuma entrada ainda</td></tr>';
+                } else {
+                    rows.innerHTML = data.entries.map(e => `
+                        <tr>
+                            <td>${e.date}</td>
+                            <td>${e.desc}</td>
+                            <td><span class="badge badge-${e.method === 'Pix' ? 'pix' : e.method === 'Cartão' ? 'card' : 'cash'}">${e.method}</span></td>
+                            <td>${fmt(e.amount)}</td>
+                        </tr>
+                    `).join('');
+                }
+                
+                updateStatus(true);
+                console.log('✅ Interface atualizada!');
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar:', error);
+                updateStatus(false);
+                document.getElementById('rows').innerHTML = 
+                    '<tr><td colspan="4" style="text-align:center;padding:30px;color:#ef4444;">Erro ao conectar: ' + error.message + '</td></tr>';
+            }
+        }
+
+        async function saveEntry(e) {
+            e.preventDefault();
+            
+            const desc = document.getElementById('desc').value;
+            const method = document.getElementById('method').value;
+            const amount = document.getElementById('amount').value;
+            
+            try {
+                console.log('📤 Enviando:', { desc, method, amount });
+                
+                const response = await fetch(URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'addEntry',
+                        desc: desc,
+                        method: method,
+                        amount: parseFloat(amount)
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('📥 Resposta:', data);
+                
+                if (data.success) {
+                    closeModal();
+                    loadData();
+                    alert('✅ Entrada adicionada!');
+                } else {
+                    alert('❌ Erro: ' + (data.error || 'Desconhecido'));
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao salvar:', error);
+                alert('Erro ao salvar: ' + error.message);
+            }
+        }
+
+        function openModal() {
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            document.querySelector('form').reset();
+        }
+
+        // Fecha modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Carrega dados ao iniciar
+        console.log('🚀 Iniciando aplicação...');
+        console.log('🔗 URL configurada:', URL);
+        loadData();
+        
+        // Recarrega a cada 30 segundos
+        setInterval(loadData, 30000);
     </script>
 </body>
 </html>
