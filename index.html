@@ -1,4 +1,803 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fluxo de Caixa</title><style>
-:root{--ink:#0e1736;--blue:#155eef;--sky:#eaf1ff;--green:#16a34a;--muted:#6b7280}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:linear-gradient(145deg,#f4f7ff,#eefbf5);color:var(--ink)}main{max-width:1100px;margin:auto;padding:48px 24px}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.brand{display:flex;gap:13px;align-items:center}.mark{width:44px;height:44px;display:grid;place-items:center;border-radius:14px;background:var(--blue);color:#fff;font-size:22px;box-shadow:0 12px 25px #155eef44}h1{font-size:24px;margin:0}.sub{margin:4px 0 0;color:var(--muted);font-size:14px}.date{background:#fff;border:1px solid #dbe5ff;padding:10px 14px;border-radius:12px;font-weight:700}.hero{background:linear-gradient(115deg,#155eef,#3b82f6);color:white;border-radius:24px;padding:30px;box-shadow:0 18px 38px #155eef30}.hero p{margin:0;opacity:.82}.balance{font-size:42px;font-weight:800;margin:10px 0 0}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0}.card,.table{background:#fff;border:1px solid #e7ecf8;border-radius:18px;box-shadow:0 8px 22px #0e173608}.card{padding:20px}.label{color:var(--muted);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}.money{font-size:26px;font-weight:800;margin-top:8px}.positive{color:var(--green)}.table{padding:8px;overflow:auto}table{border-collapse:collapse;width:100%;min-width:640px}th{text-align:left;color:#51607c;font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding:14px}td{padding:16px 14px;border-top:1px solid #edf0f6;font-size:14px}.badge{background:#eaf1ff;color:#155eef;padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px}.empty{text-align:center;color:var(--muted);padding:24px}.add{margin-top:20px;background:#0e1736;color:white;border:0;border-radius:12px;padding:13px 18px;font-weight:750;cursor:pointer}.add:hover{background:#155eef}@media(max-width:700px){header{align-items:flex-start;gap:14px;flex-direction:column}.cards{grid-template-columns:1fr}.balance{font-size:34px}}</style></head>
-<body><main><header><div class="brand"><div class="mark">R$</div><div><h1>Fluxo de Caixa</h1><p class="sub">Visão rápida das entradas e do saldo</p></div></div><div class="date">Atualizado hoje</div></header><section class="hero"><p>SALDO DISPONÍVEL</p><div class="balance" id="balance">R$ 160,00</div></section><section class="cards"><div class="card"><div class="label">Pix</div><div class="money positive" id="pix">R$ 0,00</div></div><div class="card"><div class="label">Cartão</div><div class="money positive" id="card">R$ 0,00</div></div><div class="card"><div class="label">Dinheiro no balcão</div><div class="money positive" id="cash">R$ 0,00</div></div></section><section class="table"><table><thead><tr><th>Data</th><th>Descrição</th><th>Forma de entrada</th><th>Valor</th></tr></thead><tbody id="rows"><tr><td colspan="4" class="empty">Nenhuma entrada registrada ainda.</td></tr></tbody></table></section><button class="add" onclick="addEntry()">+ Adicionar entrada</button></main><script>const fmt=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});let total=160;let values={Pix:0,"Cartão":0,"Dinheiro no balcão":0};function addEntry(){const desc=prompt("Descrição da entrada:");if(!desc)return;const method=prompt("Forma: Pix, Cartão ou Dinheiro no balcão","Pix");if(!values.hasOwnProperty(method))return alert("Escolha Pix, Cartão ou Dinheiro no balcão.");const amount=Number(prompt("Valor da entrada:"));if(!amount||amount<0)return;values[method]+=amount;total+=amount;document.getElementById("balance").textContent=fmt(total);document.getElementById(method==="Pix"?"pix":method==="Cartão"?"card":"cash").textContent=fmt(values[method]);const rows=document.getElementById("rows");if(rows.querySelector(".empty"))rows.innerHTML="";rows.insertAdjacentHTML("beforeend","<tr><td>"+new Date().toLocaleDateString("pt-BR")+"</td><td>"+desc+"</td><td><span class="badge">"+method+"</span></td><td>"+fmt(amount)+"</td></tr>")}</script></body></html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fluxo de Caixa | Dashboard Financeiro</title>
+    <style>
+        :root {
+            --ink: #0a0e1a;
+            --dark: #1a1f2e;
+            --blue: #4f46e5;
+            --blue-light: #818cf8;
+            --green: #10b981;
+            --green-dark: #059669;
+            --red: #ef4444;
+            --gray: #6b7280;
+            --gray-light: #9ca3af;
+            --border: #e5e7eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 25px -3px rgba(0,0,0,0.1), 0 4px 10px -2px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 40px -5px rgba(0,0,0,0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 50%, #0f1419 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
+        }
+
+        .brand-text h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-text p {
+            font-size: 13px;
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .date-badge {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #cbd5e1;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #cbd5e1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 18px;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        /* Hero Balance */
+        .hero {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%);
+            border-radius: 24px;
+            padding: 36px 40px;
+            margin-bottom: 24px;
+            box-shadow: 0 20px 50px rgba(79, 70, 229, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
+        }
+
+        .hero-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            opacity: 0.85;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .balance {
+            font-size: 52px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .balance-sub {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .stat-icon {
+            font-size: 20px;
+            opacity: 0.7;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #10b981;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-card:nth-child(2) .stat-value {
+            color: #60a5fa;
+        }
+
+        .stat-card:nth-child(3) .stat-value {
+            color: #f59e0b;
+        }
+
+        /* Table Section */
+        .table-container {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            margin-bottom: 24px;
+        }
+
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .table-count {
+            font-size: 13px;
+            color: #9ca3af;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        thead th {
+            text-align: left;
+            padding: 14px 24px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7280;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.02);
+        }
+
+        tbody td {
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 14px;
+            color: #d1d5db;
+        }
+
+        tbody tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-pix {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .badge-card {
+            background: rgba(96, 165, 250, 0.15);
+            color: #60a5fa;
+        }
+
+        .badge-cash {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .amount {
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: #6b7280;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* Actions */
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            color: #cbd5e1;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 14px 24px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: linear-gradient(135deg, #1a1f2e, #0f1419);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 32px;
+            width: 90%;
+            max-width: 480px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal h3 {
+            font-size: 20px;
+            margin-bottom: 24px;
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #9ca3af;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        .form-group select option {
+            background: #1a1f2e;
+            color: #e2e8f0;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            color: #cbd5e1;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .btn-save {
+            flex: 2;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-save:hover {
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                padding: 28px;
+            }
+
+            .balance {
+                font-size: 38px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Header -->
+        <div class="header">
+            <div class="brand">
+                <div class="logo">💰</div>
+                <div class="brand-text">
+                    <h1>Fluxo de Caixa</h1>
+                    <p>Dashboard financeiro em tempo real</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="date-badge" id="dateDisplay">📅 Atualizado hoje</div>
+            </div>
+        </div>
+
+        <!-- Hero Balance -->
+        <div class="hero">
+            <div class="hero-label">💎 Saldo Disponível</div>
+            <div class="balance" id="balance">R$ 160,00</div>
+            <div class="balance-sub">✨ Total acumulado de todas as entradas</div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">📱 Pix</span>
+                    <span class="stat-icon">⚡</span>
+                </div>
+                <div class="stat-value" id="pix">R$ 0,00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">💳 Cartão</span>
+                    <span class="stat-icon">🔷</span>
+                </div>
+                <div class="stat-value" id="card">R$ 0,00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">💵 Dinheiro</span>
+                    <span class="stat-icon">✨</span>
+                </div>
+                <div class="stat-value" id="cash">R$ 0,00</div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <span class="table-title">📋 Histórico de Entradas</span>
+                <span class="table-count" id="entryCount">0 registros</span>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>📅 Data</th>
+                            <th>📝 Descrição</th>
+                            <th>💳 Forma</th>
+                            <th>💰 Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rows">
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📭</div>
+                                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Nenhuma entrada ainda</div>
+                                    <div style="font-size: 14px;">Clique em "Nova Entrada" para começar</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <button class="btn-primary" onclick="openModal()">
+                <span>＋</span> Nova Entrada
+            </button>
+            <button class="btn-secondary" onclick="exportData()">
+                📊 Exportar Relatório
+            </button>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <h3>✨ Registrar Nova Entrada</h3>
+            <form id="entryForm" onsubmit="handleSubmit(event)">
+                <div class="form-group">
+                    <label>📝 Descrição</label>
+                    <input type="text" id="desc" placeholder="Ex: Venda de produto" required>
+                </div>
+                <div class="form-group">
+                    <label>💳 Forma de Pagamento</label>
+                    <select id="method" required>
+                        <option value="Pix">📱 Pix</option>
+                        <option value="Cartão">💳 Cartão</option>
+                        <option value="Dinheiro no balcão">💵 Dinheiro no balcão</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>💰 Valor (R$)</label>
+                    <input type="number" id="amount" placeholder="0,00" step="0.01" min="0.01" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-save">💾 Salvar Entrada</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Formatação de moeda
+        const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        // Estado inicial
+        let total = 160;
+        let values = {
+            'Pix': 0,
+            'Cartão': 0,
+            'Dinheiro no balcão': 0
+        };
+        let entries = [];
+
+        // Atualizar interface
+        function updateUI() {
+            document.getElementById('balance').textContent = fmt(total);
+            document.getElementById('pix').textContent = fmt(values['Pix']);
+            document.getElementById('card').textContent = fmt(values['Cartão']);
+            document.getElementById('cash').textContent = fmt(values['Dinheiro no balcão']);
+            document.getElementById('entryCount').textContent = `${entries.length} registro${entries.length !== 1 ? 's' : ''}`;
+            
+            const rowsContainer = document.getElementById('rows');
+            
+            if (entries.length === 0) {
+                rowsContainer.innerHTML = `
+                    <tr>
+                        <td colspan="4">
+                            <div class="empty-state">
+                                <div class="empty-icon">📭</div>
+                                <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Nenhuma entrada ainda</div>
+                                <div style="font-size: 14px;">Clique em "Nova Entrada" para começar</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                rowsContainer.innerHTML = entries.map(entry => {
+                    const badgeClass = entry.method === 'Pix' ? 'badge-pix' : 
+                                      entry.method === 'Cartão' ? 'badge-card' : 'badge-cash';
+                    return `
+                        <tr>
+                            <td>${entry.date}</td>
+                            <td>${entry.desc}</td>
+                            <td><span class="badge ${badgeClass}">${entry.method}</span></td>
+                            <td class="amount">${fmt(entry.amount)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Adicionar entrada
+        function addEntry(desc, method, amount) {
+            values[method] += amount;
+            total += amount;
+            
+            entries.unshift({
+                date: new Date().toLocaleDateString('pt-BR'),
+                desc: desc,
+                method: method,
+                amount: amount
+            });
+            
+            updateUI();
+        }
+
+        // Modal
+        function openModal() {
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('desc').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            document.getElementById('entryForm').reset();
+        }
+
+        function handleSubmit(e) {
+            e.preventDefault();
+            
+            const desc = document.getElementById('desc').value.trim();
+            const method = document.getElementById('method').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            
+            if (!desc || !amount || amount <= 0) {
+                alert('⚠️ Por favor, preencha todos os campos corretamente.');
+                return;
+            }
+            
+            addEntry(desc, method, amount);
+            closeModal();
+        }
+
+        // Exportar dados
+        function exportData() {
+            if (entries.length === 0) {
+                alert('📭 Nenhum dado para exportar.');
+                return;
+            }
+            
+            let report = '📊 RELATÓRIO DE FLUXO DE CAIXA\n';
+            report += '='.repeat(50) + '\n\n';
+            report += `💰 Saldo Total: ${fmt(total)}\n`;
+            report += `📱 Pix: ${fmt(values['Pix'])}\n`;
+            report += `💳 Cartão: ${fmt(values['Cartão'])}\n`;
+            report += `💵 Dinheiro: ${fmt(values['Dinheiro no balcão'])}\n\n`;
+            report += '📋 ÚLTIMAS ENTRADAS:\n';
+            report += '-'.repeat(50) + '\n';
+            
+            entries.forEach(entry => {
+                report += `${entry.date} | ${entry.desc} | ${entry.method} | ${fmt(entry.amount)}\n`;
+            });
+            
+            // Criar blob e download
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fluxo-caixa-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert('✅ Relatório exportado com sucesso!');
+        }
+
+        // Atualizar data
+        function updateDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('dateDisplay').textContent = '📅 ' + now.toLocaleDateString('pt-BR', options);
+        }
+
+        // Fechar modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Fechar modal clicando fora
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('modal')) closeModal();
+        });
+
+        // Inicialização
+        updateDate();
+        updateUI();
+
+        // Atualizar data a cada minuto
+        setInterval(updateDate, 60000);
+
+        console.log('💎 Fluxo de Caixa Premium inicializado!');
+        console.log('✨ Design inspirado em lanblackout.com');
+    </script>
+</body>
+</html>
