@@ -151,9 +151,20 @@
             .menu-tile .menu-icon { font-size: 22px; }
             .menu-tile .menu-label { font-size: 9.5px; }
         }
+        #printArea { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { display: block; position: absolute; top: 0; left: 0; width: 100%; padding: 24px; color: #000; background: #fff; }
+            #printArea h1 { font-size: 22px; margin-bottom: 4px; }
+            #printArea h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #000; padding-bottom: 4px; margin: 18px 0 8px; }
+            #printArea p { font-size: 13px; margin: 3px 0; line-height: 1.4; }
+            #printArea .print-item { margin-bottom: 10px; }
+        }
     </style>
 </head>
 <body>
+    <div id="printArea"></div>
     <div class="lock-screen" id="lockScreen">
         <div class="lock-box" id="lockBox"></div>
     </div>
@@ -309,6 +320,29 @@
             <div class="actions">
                 <button class="btn-primary" onclick="openDespesaFixaModal()">＋ Nova Despesa Fixa</button>
                 <button class="btn-secondary" onclick="loadResumo()">🔄 Atualizar</button>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>🔒 Fechamento de Caixa</h3>
+                </div>
+                <div style="padding: 16px 20px;">
+                    <div class="form-group">
+                        <label>📅 Data</label>
+                        <input type="date" id="fech_data" onchange="loadFechamento()">
+                    </div>
+                    <div class="subtext" id="fechResumoDia" style="display:block; margin-bottom:16px;"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>💰 Abertura de Caixa</label><input type="number" id="fech_abertura" step="0.01" min="0" inputmode="decimal"></div>
+                        <div class="form-group"><label>🏦 Fundo de Caixa (p/ amanhã)</label><input type="number" id="fech_fundo" step="0.01" min="0" inputmode="decimal"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>💵 Notas (contado)</label><input type="number" id="fech_notas" step="0.01" min="0" inputmode="decimal"></div>
+                        <div class="form-group"><label>🪙 Moedas (contado)</label><input type="number" id="fech_moedas" step="0.01" min="0" inputmode="decimal"></div>
+                    </div>
+                    <div class="form-group"><label>Observações</label><input type="text" id="fech_obs" placeholder="Opcional"></div>
+                    <button class="btn-save" style="width:100%;" onclick="saveFechamento()">💾 Salvar Fechamento do Dia</button>
+                </div>
             </div>
         </div>
 
@@ -1078,7 +1112,7 @@
             document.getElementById('viewCurriculo').classList.toggle('active', view === 'curriculo');
             if (!viewsInitialized[view]) {
                 viewsInitialized[view] = true;
-                if (view === 'caixa') { loadData(); loadPix(); loadSaidas(); loadResumo(); }
+                if (view === 'caixa') { loadData(); loadPix(); loadSaidas(); loadResumo(); loadFechamento(); }
                 else if (view === 'termos') loadContratos();
                 else if (view === 'curriculo') loadCurriculos();
             }
@@ -1633,6 +1667,72 @@
         }
         window.loadResumo = loadResumo;
 
+        // ===== Fechamento de Caixa (diário) =====
+        async function loadFechamento() {
+            const dataEl = document.getElementById('fech_data');
+            if (!dataEl.value) dataEl.value = todayISO();
+            const data = dataEl.value;
+            const resumoEl = document.getElementById('fechResumoDia');
+            resumoEl.textContent = 'Carregando...';
+
+            try {
+                const [fechRes, pixRes, sangriaRes, graficaRes, retiradasRes] = await Promise.all([
+                    supabase.from('fechamentos_caixa').select('*').eq('data', data).maybeSingle(),
+                    supabase.from('pix_recebidos').select('valor').eq('data', data),
+                    supabase.from('sangria').select('valor').eq('data', data),
+                    supabase.from('grafica_despesas').select('valor').eq('data', data),
+                    supabase.from('retiradas').select('valor').eq('data', data),
+                ]);
+                for (const r of [fechRes, pixRes, sangriaRes, graficaRes, retiradasRes]) {
+                    if (r.error) throw new Error(r.error.message);
+                }
+
+                const sum = (rows) => (rows || []).reduce((s, r) => s + Number(r.valor), 0);
+                const pixDia = sum(pixRes.data);
+                const sangriaDia = sum(sangriaRes.data);
+                const graficaDia = sum(graficaRes.data);
+                const retiradasDia = sum(retiradasRes.data);
+                resumoEl.innerHTML = `📲 Pix: ${fmt(pixDia)} · 🏦 Sangria: ${fmt(sangriaDia)} · 🖨️ Gráfica: ${fmt(graficaDia)} · 🧾 Retiradas: ${fmt(retiradasDia)}`;
+
+                const f = fechRes.data;
+                document.getElementById('fech_abertura').value = f ? f.abertura_caixa : '';
+                document.getElementById('fech_fundo').value = f ? f.fundo_caixa : '';
+                document.getElementById('fech_notas').value = f ? f.notas : '';
+                document.getElementById('fech_moedas').value = f ? f.moedas : '';
+                document.getElementById('fech_obs').value = f ? (f.observacoes || '') : '';
+            } catch (error) {
+                resumoEl.textContent = '⚠️ ' + error.message;
+            }
+        }
+        window.loadFechamento = loadFechamento;
+
+        async function saveFechamento() {
+            const data = document.getElementById('fech_data').value || todayISO();
+            const btn = document.querySelector('#viewCaixa button[onclick="saveFechamento()"]');
+            const original = btn.textContent;
+            btn.textContent = '⏳ Salvando...';
+            btn.disabled = true;
+            try {
+                const { error } = await supabase.from('fechamentos_caixa').upsert({
+                    data,
+                    abertura_caixa: parseFloat(document.getElementById('fech_abertura').value) || 0,
+                    fundo_caixa: parseFloat(document.getElementById('fech_fundo').value) || 0,
+                    notas: parseFloat(document.getElementById('fech_notas').value) || 0,
+                    moedas: parseFloat(document.getElementById('fech_moedas').value) || 0,
+                    observacoes: cleanStr(document.getElementById('fech_obs').value),
+                    updated_at: new Date().toISOString(),
+                }, { onConflict: 'data' });
+                if (error) throw new Error(error.message);
+                alert('✅ Fechamento salvo!');
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            } finally {
+                btn.textContent = original;
+                btn.disabled = false;
+            }
+        }
+        window.saveFechamento = saveFechamento;
+
         // ===== Currículo (pedidos de cliente) =====
         let curriculosCache = [];
 
@@ -1694,6 +1794,7 @@
                             <span class="subtext">${feito ? '✅ Feito' : '⏳ Pendente'}</span>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                            <button class="btn-delete" onclick="printCurriculo('${c.id}')" title="Imprimir">🖨️</button>
                             <button class="btn-delete" onclick="toggleCurriculoStatus('${c.id}', '${feito ? 'PENDENTE' : 'FEITO'}')" title="${feito ? 'Marcar como pendente' : 'Marcar como feito'}">${feito ? '↩️' : '✅'}</button>
                             <button class="btn-delete" onclick="deleteCurriculo('${c.id}')" title="Excluir">🗑️</button>
                         </div>
@@ -1704,6 +1805,39 @@
             }
         }
         window.loadCurriculos = loadCurriculos;
+
+        function printCurriculo(id) {
+            const c = curriculosCache.find(x => x.id === id);
+            if (!c) return;
+            const dados = c.dados || {};
+            const nascimento = c.data_nascimento ? new Date(c.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+
+            const contato = [
+                c.telefone ? `Telefone: ${c.telefone}` : null,
+                c.whatsapp && c.whatsapp !== c.telefone ? `WhatsApp: ${c.whatsapp}` : null,
+                c.email ? `Email: ${c.email}` : null,
+            ].filter(Boolean).map(p => `<p>${escapeHtml(p)}</p>`).join('');
+
+            const endereco = [c.endereco, c.bairro, c.cidade, c.estado].filter(Boolean).join(', ');
+
+            const outrasInfo = Object.entries(dados)
+                .filter(([k, v]) => k.trim() && v)
+                .map(([k, v]) => `<p><b>${escapeHtml(k)}:</b> ${escapeHtml(String(v))}</p>`)
+                .join('');
+
+            document.getElementById('printArea').innerHTML = `
+                <h1>${escapeHtml(c.nome)} ${escapeHtml(c.sobrenome) || ''}</h1>
+                <p>Nascimento: ${nascimento} · ${escapeHtml(c.nacionalidade) || '-'} · ${escapeHtml(c.estado_civil) || '-'}</p>
+                <h2>Contato</h2>
+                ${contato || '<p>-</p>'}
+                <h2>Endereço</h2>
+                <p>${escapeHtml(endereco) || '-'}</p>
+                <h2>Informações do Formulário</h2>
+                ${outrasInfo || '<p>-</p>'}
+            `;
+            setTimeout(() => window.print(), 100);
+        }
+        window.printCurriculo = printCurriculo;
 
         function openModal() {
             document.getElementById('modal').classList.add('active');

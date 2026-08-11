@@ -218,3 +218,28 @@ CREATE POLICY "allow anon select" ON public.curriculos FOR SELECT TO anon USING 
 CREATE POLICY "allow anon insert" ON public.curriculos FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "allow anon update" ON public.curriculos FOR UPDATE TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "allow anon delete" ON public.curriculos FOR DELETE TO anon USING (true);
+
+-- ============================================================
+-- Fechamento diário: abertura de caixa e contagem física (notas/moedas)
+-- pra conferência, um por dia. Não recalcula um "saldo final" definitivo
+-- (a lógica exata da planilha original é ambígua) — o app mostra os
+-- totais do dia (pix/sangria/gráfica/retiradas) ao lado pra conferência.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.fechamentos_caixa (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    data DATE NOT NULL UNIQUE,
+    abertura_caixa NUMERIC NOT NULL DEFAULT 0,
+    notas NUMERIC NOT NULL DEFAULT 0,
+    moedas NUMERIC NOT NULL DEFAULT 0,
+    fundo_caixa NUMERIC NOT NULL DEFAULT 0,
+    observacoes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.fechamentos_caixa ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow anon select" ON public.fechamentos_caixa FOR SELECT TO anon USING (true);
+CREATE POLICY "allow anon insert" ON public.fechamentos_caixa FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "allow anon update" ON public.fechamentos_caixa FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow anon delete" ON public.fechamentos_caixa FOR DELETE TO anon USING (true);
