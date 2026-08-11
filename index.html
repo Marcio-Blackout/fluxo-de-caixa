@@ -240,6 +240,46 @@
                 <button class="btn-primary" onclick="openModal()">＋ Nova Entrada</button>
                 <button class="btn-secondary" onclick="loadData()">🔄 Atualizar</button>
             </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>📲 Pix Recebidos (com taxa)</h3>
+                    <span class="table-count" id="pixCount">0 registros</span>
+                </div>
+                <div id="pixRows">
+                    <div class="empty-state"><div class="empty-icon">📭</div><div>Carregando...</div></div>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn-primary" onclick="openPixModal()">＋ Novo Pix</button>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>🧾 Saídas do Caixa</h3>
+                    <span class="table-count" id="saidaCount">0 registros</span>
+                </div>
+                <div class="cards" style="padding: 16px 20px 0;">
+                    <div class="card">
+                        <div class="card-label">🏪 Loja</div>
+                        <div class="card-value" id="saidaLoja">R$ 0,00</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">🏠 Família</div>
+                        <div class="card-value" id="saidaFamilia">R$ 0,00</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">➗ Misto</div>
+                        <div class="card-value" id="saidaMisto">R$ 0,00</div>
+                    </div>
+                </div>
+                <div id="saidaRows">
+                    <div class="empty-state"><div class="empty-icon">📭</div><div>Carregando...</div></div>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn-primary" onclick="openSaidaModal()">＋ Nova Saída</button>
+            </div>
         </div>
 
         <div class="view" id="viewTermos">
@@ -370,6 +410,96 @@
 
                 <div class="modal-buttons">
                     <button type="button" class="btn-cancel" onclick="closeTermoModal()">Cancelar</button>
+                    <button type="submit" class="btn-save">💾 Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="pixModal">
+        <div class="modal-content">
+            <h2>📲 Novo Pix Recebido</h2>
+            <form onsubmit="savePix(event)">
+                <div class="form-group">
+                    <label>📅 Data</label>
+                    <input type="date" id="pix_data" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>💰 Valor Líquido (R$)</label><input type="number" id="pix_valor" required step="0.01" min="0.01" inputmode="decimal"></div>
+                    <div class="form-group"><label>💸 Taxa (R$)</label><input type="number" id="pix_taxa" step="0.01" min="0" value="0" inputmode="decimal"></div>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="closePixModal()">Cancelar</button>
+                    <button type="submit" class="btn-save">💾 Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="saidaModal">
+        <div class="modal-content">
+            <h2>🧾 Nova Saída do Caixa</h2>
+            <form onsubmit="saveSaida(event)">
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="saida_tipo" onchange="toggleSaidaFields()">
+                        <option value="retirada">Retirada / Despesa</option>
+                        <option value="sangria">Sangria (depósito no banco)</option>
+                        <option value="grafica">Gráfica</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📅 Data</label>
+                    <input type="date" id="saida_data" required>
+                </div>
+                <div class="form-group">
+                    <label>💰 Valor (R$)</label>
+                    <input type="number" id="saida_valor" required step="0.01" min="0.01" inputmode="decimal">
+                </div>
+
+                <div id="saida_fields_retirada">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Origem</label>
+                            <select id="saida_origem">
+                                <option>CAIXA</option>
+                                <option>SICREDI</option>
+                                <option>COFRE</option>
+                                <option>PAG SEGURO</option>
+                                <option>CARTÃO</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Categoria</label>
+                            <select id="saida_categoria">
+                                <option value="LOJA">🏪 Loja</option>
+                                <option value="FAMILIA">🏠 Família</option>
+                                <option value="MISTO">➗ Misto</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Destino (categoria da despesa)</label><input type="text" id="saida_destino" placeholder="Ex: MERCADO, DESPESA BLACKOUT..."></div>
+                    <div class="form-group"><label>Descrição</label><input type="text" id="saida_descricao" placeholder="Ex: fatura celesc"></div>
+                </div>
+
+                <div id="saida_fields_sangria" style="display:none;">
+                    <div class="form-group"><label>Destino</label><input type="text" id="saida_sangria_destino" placeholder="Ex: SICREDI"></div>
+                </div>
+
+                <div id="saida_fields_grafica" style="display:none;">
+                    <div class="form-group">
+                        <label>Forma de Pagamento</label>
+                        <select id="saida_grafica_forma">
+                            <option>CAIXA</option>
+                            <option>SICREDI</option>
+                            <option>PAG SEGURO</option>
+                            <option>CARTÃO</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="closeSaidaModal()">Cancelar</button>
                     <button type="submit" class="btn-save">💾 Salvar</button>
                 </div>
             </form>
@@ -864,7 +994,7 @@
             document.getElementById('viewTermos').classList.toggle('active', view === 'termos');
             if (!viewsInitialized[view]) {
                 viewsInitialized[view] = true;
-                if (view === 'caixa') loadData();
+                if (view === 'caixa') { loadData(); loadPix(); loadSaidas(); }
                 else if (view === 'termos') loadContratos();
             }
         }
@@ -1088,6 +1218,193 @@
         }
         window.loadContratos = loadContratos;
 
+        // ===== Pix (com taxa) e Saídas do Caixa (Retirada / Sangria / Gráfica) =====
+        function todayISO() { return new Date().toISOString().slice(0, 10); }
+
+        function openPixModal() {
+            document.getElementById('pix_data').value = todayISO();
+            document.getElementById('pixModal').classList.add('active');
+        }
+        function closePixModal() {
+            document.getElementById('pixModal').classList.remove('active');
+            document.querySelector('#pixModal form').reset();
+        }
+        window.openPixModal = openPixModal;
+        window.closePixModal = closePixModal;
+
+        async function savePix(e) {
+            e.preventDefault();
+            const btn = document.querySelector('#pixModal .btn-save');
+            const original = btn.textContent;
+            btn.textContent = '⏳ Salvando...';
+            btn.disabled = true;
+            try {
+                const { error } = await supabase.from('pix_recebidos').insert({
+                    data: document.getElementById('pix_data').value,
+                    valor: parseFloat(document.getElementById('pix_valor').value),
+                    taxa: parseFloat(document.getElementById('pix_taxa').value) || 0,
+                });
+                if (error) throw new Error(error.message);
+                closePixModal();
+                await loadPix();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            } finally {
+                btn.textContent = original;
+                btn.disabled = false;
+            }
+        }
+        window.savePix = savePix;
+
+        async function deletePix(id) {
+            if (!confirm('Excluir este Pix?')) return;
+            const { error } = await supabase.from('pix_recebidos').delete().eq('id', id);
+            if (error) { alert('Erro ao excluir: ' + error.message); return; }
+            await loadPix();
+        }
+        window.deletePix = deletePix;
+
+        async function loadPix() {
+            const container = document.getElementById('pixRows');
+            try {
+                const { data: rows, error } = await supabase.from('pix_recebidos').select('*').order('data', { ascending: false });
+                if (error) throw new Error(error.message);
+                document.getElementById('pixCount').textContent = (rows || []).length + ' registro' + (rows.length !== 1 ? 's' : '');
+                if (!rows || rows.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div>Nenhum Pix registrado ainda</div></div>';
+                    return;
+                }
+                container.innerHTML = rows.map(r => `<div class="link-row" style="cursor:default;">
+                    <span>${new Date(r.data + 'T00:00:00').toLocaleDateString('pt-BR')} · ${fmt(r.valor)} <span class="subtext">(taxa ${fmt(r.taxa)})</span></span>
+                    <button class="btn-delete" onclick="deletePix('${r.id}')" title="Excluir">🗑️</button>
+                </div>`).join('');
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state" style="color:#ef4444;">⚠️ ${error.message}</div>`;
+            }
+        }
+        window.loadPix = loadPix;
+
+        function toggleSaidaFields() {
+            const tipo = document.getElementById('saida_tipo').value;
+            document.getElementById('saida_fields_retirada').style.display = tipo === 'retirada' ? '' : 'none';
+            document.getElementById('saida_fields_sangria').style.display = tipo === 'sangria' ? '' : 'none';
+            document.getElementById('saida_fields_grafica').style.display = tipo === 'grafica' ? '' : 'none';
+        }
+        window.toggleSaidaFields = toggleSaidaFields;
+
+        function openSaidaModal() {
+            document.getElementById('saida_data').value = todayISO();
+            document.getElementById('saida_tipo').value = 'retirada';
+            toggleSaidaFields();
+            document.getElementById('saidaModal').classList.add('active');
+        }
+        function closeSaidaModal() {
+            document.getElementById('saidaModal').classList.remove('active');
+            document.querySelector('#saidaModal form').reset();
+        }
+        window.openSaidaModal = openSaidaModal;
+        window.closeSaidaModal = closeSaidaModal;
+
+        async function saveSaida(e) {
+            e.preventDefault();
+            const btn = document.querySelector('#saidaModal .btn-save');
+            const original = btn.textContent;
+            btn.textContent = '⏳ Salvando...';
+            btn.disabled = true;
+            try {
+                const tipo = document.getElementById('saida_tipo').value;
+                const data = document.getElementById('saida_data').value;
+                const valor = parseFloat(document.getElementById('saida_valor').value);
+                let error;
+                if (tipo === 'retirada') {
+                    ({ error } = await supabase.from('retiradas').insert({
+                        data, valor,
+                        origem: document.getElementById('saida_origem').value,
+                        destino: cleanStr(document.getElementById('saida_destino').value) || 'OUTROS',
+                        categoria: document.getElementById('saida_categoria').value,
+                        descricao: cleanStr(document.getElementById('saida_descricao').value),
+                    }));
+                } else if (tipo === 'sangria') {
+                    ({ error } = await supabase.from('sangria').insert({
+                        data, valor,
+                        destino: cleanStr(document.getElementById('saida_sangria_destino').value) || 'OUTROS',
+                    }));
+                } else {
+                    ({ error } = await supabase.from('grafica_despesas').insert({
+                        data, valor,
+                        forma_pagamento: document.getElementById('saida_grafica_forma').value,
+                    }));
+                }
+                if (error) throw new Error(error.message);
+                closeSaidaModal();
+                await loadSaidas();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            } finally {
+                btn.textContent = original;
+                btn.disabled = false;
+            }
+        }
+        window.saveSaida = saveSaida;
+
+        async function deleteSaida(tipo, id) {
+            if (!confirm('Excluir esta saída?')) return;
+            const table = tipo === 'retirada' ? 'retiradas' : tipo === 'sangria' ? 'sangria' : 'grafica_despesas';
+            const { error } = await supabase.from(table).delete().eq('id', id);
+            if (error) { alert('Erro ao excluir: ' + error.message); return; }
+            await loadSaidas();
+        }
+        window.deleteSaida = deleteSaida;
+
+        const CATEGORIA_BADGE = { LOJA: '🏪 Loja', FAMILIA: '🏠 Família', MISTO: '➗ Misto' };
+
+        async function loadSaidas() {
+            const container = document.getElementById('saidaRows');
+            try {
+                const [retiradasRes, sangriaRes, graficaRes] = await Promise.all([
+                    supabase.from('retiradas').select('*').order('data', { ascending: false }),
+                    supabase.from('sangria').select('*').order('data', { ascending: false }),
+                    supabase.from('grafica_despesas').select('*').order('data', { ascending: false }),
+                ]);
+                if (retiradasRes.error) throw new Error(retiradasRes.error.message);
+                if (sangriaRes.error) throw new Error(sangriaRes.error.message);
+                if (graficaRes.error) throw new Error(graficaRes.error.message);
+
+                const retiradas = retiradasRes.data || [];
+                const totals = retiradas.reduce((acc, r) => {
+                    acc[r.categoria] = (acc[r.categoria] || 0) + Number(r.valor);
+                    return acc;
+                }, {});
+                document.getElementById('saidaLoja').textContent = fmt(totals.LOJA || 0);
+                document.getElementById('saidaFamilia').textContent = fmt(totals.FAMILIA || 0);
+                document.getElementById('saidaMisto').textContent = fmt(totals.MISTO || 0);
+
+                const all = [
+                    ...retiradas.map(r => ({ tipo: 'retirada', id: r.id, data: r.data, valor: r.valor, label: `${escapeHtml(r.destino)}${r.descricao ? ' — ' + escapeHtml(r.descricao) : ''}`, sub: `${escapeHtml(r.origem)} · ${CATEGORIA_BADGE[r.categoria] || r.categoria}` })),
+                    ...sangriaRes.data.map(r => ({ tipo: 'sangria', id: r.id, data: r.data, valor: r.valor, label: `Sangria → ${escapeHtml(r.destino)}`, sub: '🏦 Depósito' })),
+                    ...graficaRes.data.map(r => ({ tipo: 'grafica', id: r.id, data: r.data, valor: r.valor, label: 'Gráfica', sub: `🖨️ Pago via ${escapeHtml(r.forma_pagamento)}` })),
+                ].sort((a, b) => (a.data < b.data ? 1 : -1));
+
+                document.getElementById('saidaCount').textContent = all.length + ' registro' + (all.length !== 1 ? 's' : '');
+
+                if (all.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div>Nenhuma saída registrada ainda</div></div>';
+                    return;
+                }
+
+                container.innerHTML = all.map(r => `<div class="contrato-card">
+                    <div class="contrato-info">
+                        <b>${fmt(r.valor)}</b> — ${r.label}
+                        <span class="subtext">${r.sub} · 📅 ${new Date(r.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    <button class="btn-delete" onclick="deleteSaida('${r.tipo}', '${r.id}')" title="Excluir">🗑️</button>
+                </div>`).join('');
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state" style="color:#ef4444;">⚠️ ${error.message}</div>`;
+            }
+        }
+        window.loadSaidas = loadSaidas;
+
         function openModal() {
             document.getElementById('modal').classList.add('active');
             document.getElementById('desc').focus();
@@ -1100,7 +1417,7 @@
 
         // Fecha modal com ESC
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') { closeModal(); closeTermoModal(); }
+            if (e.key === 'Escape') { closeModal(); closeTermoModal(); closePixModal(); closeSaidaModal(); }
         });
 
         // Fecha modal clicando fora
@@ -1110,6 +1427,12 @@
         document.getElementById('termoModal').addEventListener('click', (e) => {
             if (e.target.id === 'termoModal') closeTermoModal();
         });
+        document.getElementById('pixModal').addEventListener('click', (e) => {
+            if (e.target.id === 'pixModal') closePixModal();
+        });
+        document.getElementById('saidaModal').addEventListener('click', (e) => {
+            if (e.target.id === 'saidaModal') closeSaidaModal();
+        });
 
         // Inicia o dashboard (após desbloqueio)
         console.log('🚀 Iniciando Painel de Controle...');
@@ -1118,7 +1441,7 @@
         // Atualiza a cada 30 segundos (só a tela ativa, quando desbloqueado)
         setInterval(() => {
             if (document.getElementById('appContainer').style.display === 'none') return;
-            if (document.getElementById('viewCaixa').classList.contains('active')) loadData();
+            if (document.getElementById('viewCaixa').classList.contains('active')) { loadData(); loadPix(); loadSaidas(); }
             else if (document.getElementById('viewTermos').classList.contains('active')) loadContratos();
         }, 30000);
     </script>

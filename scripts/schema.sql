@@ -85,3 +85,75 @@ CREATE POLICY "allow anon select" ON public.contratos FOR SELECT TO anon USING (
 CREATE POLICY "allow anon insert" ON public.contratos FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "allow anon update" ON public.contratos FOR UPDATE TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "allow anon delete" ON public.contratos FOR DELETE TO anon USING (true);
+
+-- ============================================================
+-- Financeiro completo: reflete SANGRIA, GRÁFICA, PIX e RETIRADA
+-- da planilha, unificando despesas de loja e família (retiradas.categoria).
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.pix_recebidos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    data DATE NOT NULL DEFAULT CURRENT_DATE,
+    valor NUMERIC NOT NULL CHECK (valor > 0),
+    taxa NUMERIC NOT NULL DEFAULT 0 CHECK (taxa >= 0),
+    descricao TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.sangria (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    data DATE NOT NULL DEFAULT CURRENT_DATE,
+    valor NUMERIC NOT NULL CHECK (valor > 0),
+    destino TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.grafica_despesas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    data DATE NOT NULL DEFAULT CURRENT_DATE,
+    valor NUMERIC NOT NULL CHECK (valor > 0),
+    forma_pagamento TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.retiradas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    data DATE NOT NULL DEFAULT CURRENT_DATE,
+    valor NUMERIC NOT NULL CHECK (valor > 0),
+    origem TEXT NOT NULL,
+    destino TEXT NOT NULL,
+    categoria TEXT NOT NULL CHECK (categoria IN ('LOJA', 'FAMILIA', 'MISTO')),
+    descricao TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pix_data ON public.pix_recebidos(data);
+CREATE INDEX IF NOT EXISTS idx_sangria_data ON public.sangria(data);
+CREATE INDEX IF NOT EXISTS idx_grafica_data ON public.grafica_despesas(data);
+CREATE INDEX IF NOT EXISTS idx_retiradas_data ON public.retiradas(data);
+CREATE INDEX IF NOT EXISTS idx_retiradas_categoria ON public.retiradas(categoria);
+
+ALTER TABLE public.pix_recebidos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sangria ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.grafica_despesas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.retiradas ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow anon select" ON public.pix_recebidos FOR SELECT TO anon USING (true);
+CREATE POLICY "allow anon insert" ON public.pix_recebidos FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "allow anon update" ON public.pix_recebidos FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow anon delete" ON public.pix_recebidos FOR DELETE TO anon USING (true);
+
+CREATE POLICY "allow anon select" ON public.sangria FOR SELECT TO anon USING (true);
+CREATE POLICY "allow anon insert" ON public.sangria FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "allow anon update" ON public.sangria FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow anon delete" ON public.sangria FOR DELETE TO anon USING (true);
+
+CREATE POLICY "allow anon select" ON public.grafica_despesas FOR SELECT TO anon USING (true);
+CREATE POLICY "allow anon insert" ON public.grafica_despesas FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "allow anon update" ON public.grafica_despesas FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow anon delete" ON public.grafica_despesas FOR DELETE TO anon USING (true);
+
+CREATE POLICY "allow anon select" ON public.retiradas FOR SELECT TO anon USING (true);
+CREATE POLICY "allow anon insert" ON public.retiradas FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "allow anon update" ON public.retiradas FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow anon delete" ON public.retiradas FOR DELETE TO anon USING (true);
