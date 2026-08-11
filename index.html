@@ -316,7 +316,7 @@
             <button class="back-btn" onclick="goHome()">← Menu</button>
             <div class="table-container">
                 <div class="table-header">
-                    <h3>📄 Termos de Responsabilidade</h3>
+                    <h3>📑 Contratos e Documentos</h3>
                     <span class="table-count" id="termoCount">0 registros</span>
                 </div>
                 <div id="termoRows">
@@ -1262,13 +1262,46 @@
         }
         window.deleteContrato = deleteContrato;
 
+        const TIPO_CONTRATO_LABELS = {
+            TERMO_DE_RESPONSABILIDADE: '🚗 Termo de Responsabilidade',
+            DECLARACAO_AUTONOMO: '📝 Declaração de Autônomo',
+            DECLARACAO_TRABALHO: '📝 Declaração de Trabalho',
+            DECLARACAO_RESIDENCIA: '🏠 Declaração de Residência',
+            DECLARACAO_UNIAO_ESTAVEL: '💍 Declaração de União Estável',
+            PROCURACAO_DETRAN: '🚓 Procuração Detran',
+            PROCURACAO_SIMPLES: '📜 Procuração Simples',
+        };
+        let contratosCache = [];
+
+        function openContratoFicha(id) {
+            const c = contratosCache.find(x => x.id === id);
+            if (!c) return;
+            document.getElementById('fichaTitulo').textContent = TIPO_CONTRATO_LABELS[c.tipo_contrato] || c.tipo_contrato;
+            const linhas = [];
+            linhas.push(`<p><b>👤 Pessoa A</b><br>${escapeHtml(c.proprietario?.nome) || '-'}${c.proprietario?.cpf ? ' · CPF ' + escapeHtml(c.proprietario.cpf) : ''}</p>`);
+            if (c.responsavel && c.responsavel.nome !== c.proprietario?.nome) {
+                linhas.push(`<p><b>👤 Pessoa B</b><br>${escapeHtml(c.responsavel.nome) || '-'}${c.responsavel?.cpf ? ' · CPF ' + escapeHtml(c.responsavel.cpf) : ''}</p>`);
+            }
+            if (c.ativo) {
+                linhas.push(`<p><b>🚗 Veículo</b><br>${escapeHtml(c.ativo.placa) || '-'} · ${escapeHtml(c.ativo.fabricante) || ''} ${escapeHtml(c.ativo.modelo) || ''}</p>`);
+            }
+            const dados = c.dados || {};
+            for (const [k, val] of Object.entries(dados)) {
+                if (val === null || val === '') continue;
+                linhas.push(`<p><b>${escapeHtml(k)}</b><br>${escapeHtml(String(val))}</p>`);
+            }
+            document.getElementById('fichaConteudo').innerHTML = linhas.join('') || '<p>Sem detalhes adicionais.</p>';
+            document.getElementById('fichaCurriculoModal').classList.add('active');
+        }
+        window.openContratoFicha = openContratoFicha;
+
         async function loadContratos() {
             const container = document.getElementById('termoRows');
             try {
                 const { data: contratos, error } = await supabase
                     .from('contratos')
                     .select(`
-                        id, data_registro,
+                        id, data_registro, tipo_contrato, dados,
                         proprietario:pessoas!contratos_proprietario_id_fkey(nome, cpf),
                         responsavel:pessoas!contratos_responsavel_id_fkey(nome, cpf),
                         ativo:ativos!contratos_ativo_id_fkey(placa, modelo, fabricante, cor)
@@ -1276,29 +1309,31 @@
                     .order('data_registro', { ascending: false });
 
                 if (error) throw new Error(error.message);
+                contratosCache = contratos || [];
 
-                document.getElementById('termoCount').textContent = (contratos || []).length + ' registro' + (contratos.length !== 1 ? 's' : '');
+                document.getElementById('termoCount').textContent = contratosCache.length + ' registro' + (contratosCache.length !== 1 ? 's' : '');
 
-                if (!contratos || contratos.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div>Nenhum termo registrado ainda</div></div>';
+                if (contratosCache.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div>Nenhum contrato registrado ainda</div></div>';
                     return;
                 }
 
-                container.innerHTML = contratos.map(c => {
+                container.innerHTML = contratosCache.map(c => {
                     const dataFmt = c.data_registro ? new Date(c.data_registro).toLocaleDateString('pt-BR') : '-';
-                    const veiculo = c.ativo ? `${escapeHtml(c.ativo.fabricante) || ''} ${escapeHtml(c.ativo.modelo) || ''}`.trim() : '-';
+                    const tipoLabel = TIPO_CONTRATO_LABELS[c.tipo_contrato] || c.tipo_contrato;
+                    const pessoaB = (c.responsavel && c.responsavel.nome !== c.proprietario?.nome) ? ` · ${escapeHtml(c.responsavel.nome)}` : '';
+                    const veiculoTag = c.ativo?.placa ? ` · 🚗 ${escapeHtml(c.ativo.placa)}` : '';
                     return `<div class="contrato-card">
-                        <div class="contrato-info">
-                            <b>${escapeHtml(c.ativo?.placa) || '-'}</b> · ${veiculo || '-'} ${c.ativo?.cor ? '(' + escapeHtml(c.ativo.cor) + ')' : ''}
-                            <span class="subtext">👤 Proprietário: ${escapeHtml(c.proprietario?.nome) || '-'}</span>
-                            <span class="subtext">🧾 Responsável: ${escapeHtml(c.responsavel?.nome) || '-'}</span>
+                        <div class="contrato-info" style="cursor:pointer;" onclick="openContratoFicha('${c.id}')">
+                            <b>${tipoLabel}</b>
+                            <span class="subtext">👤 ${escapeHtml(c.proprietario?.nome) || '-'}${pessoaB}${veiculoTag}</span>
                             <span class="subtext">📅 ${dataFmt}</span>
                         </div>
                         <button class="btn-delete" onclick="deleteContrato('${c.id}')" title="Excluir">🗑️</button>
                     </div>`;
                 }).join('');
             } catch (error) {
-                console.error('❌ Erro ao carregar termos:', error);
+                console.error('❌ Erro ao carregar contratos:', error);
                 container.innerHTML = `<div class="empty-state" style="color:#ef4444;">⚠️ ${error.message}</div>`;
             }
         }

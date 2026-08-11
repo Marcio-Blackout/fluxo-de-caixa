@@ -49,15 +49,20 @@ CREATE TABLE IF NOT EXISTS public.ativos (
 CREATE INDEX IF NOT EXISTS idx_ativos_placa ON public.ativos(placa);
 CREATE INDEX IF NOT EXISTS idx_ativos_renavam ON public.ativos(renavam);
 
--- 3. CONTRATOS / TERMOS DE RESPONSABILIDADE
+-- 3. CONTRATOS / DOCUMENTOS (Termo de Responsabilidade, Declarações, Procurações)
+-- tipo_contrato distingue o tipo; ativo_id é opcional (só Termo e Procuração
+-- Detran envolvem veículo); dados JSONB guarda os campos específicos de cada
+-- tipo (renda mensal, tempo de união, prazo de validade etc) — normalizar uma
+-- tabela por tipo de documento não compensa pro volume atual.
 CREATE TABLE IF NOT EXISTS public.contratos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tipo_contrato TEXT NOT NULL DEFAULT 'TERMO_DE_RESPONSABILIDADE',
     proprietario_id UUID NOT NULL REFERENCES public.pessoas(id) ON DELETE CASCADE,
     responsavel_id UUID NOT NULL REFERENCES public.pessoas(id) ON DELETE CASCADE,
-    ativo_id UUID NOT NULL REFERENCES public.ativos(id) ON DELETE CASCADE,
+    ativo_id UUID REFERENCES public.ativos(id) ON DELETE CASCADE,
     data_registro TIMESTAMPTZ NOT NULL,
     observacoes TEXT,
+    dados JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
