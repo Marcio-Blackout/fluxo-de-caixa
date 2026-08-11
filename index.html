@@ -339,7 +339,7 @@
                 <div class="table-header">
                     <h3 id="subTitle">-</h3>
                 </div>
-                <div id="subLinks" class="link-list"></div>
+                <div id="subLinks" class="menu-grid" style="padding: 16px 20px;"></div>
             </div>
         </div>
 
@@ -1092,9 +1092,9 @@
             document.getElementById('viewTermos').classList.remove('active');
             document.getElementById('subTitle').textContent = panel.title;
             document.getElementById('subLinks').innerHTML = panel.items.map(item =>
-                `<div class="link-row" onclick="window.open('${item.url}', '_blank', 'noopener')">
-                    <span>${escapeHtml(item.label)}</span>
-                    <span class="arrow">↗</span>
+                `<div class="menu-tile enabled" onclick="window.open('${item.url}', '_blank', 'noopener')">
+                    <div class="menu-icon">🔗</div>
+                    <div class="menu-label">${escapeHtml(item.label)}</div>
                 </div>`
             ).join('');
             document.getElementById('viewSub').classList.add('active');
