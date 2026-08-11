@@ -157,3 +157,22 @@ CREATE POLICY "allow anon select" ON public.retiradas FOR SELECT TO anon USING (
 CREATE POLICY "allow anon insert" ON public.retiradas FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "allow anon update" ON public.retiradas FOR UPDATE TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "allow anon delete" ON public.retiradas FOR DELETE TO anon USING (true);
+
+-- Despesas fixas mensais (aluguel, água, luz, internet, folha de pagamento etc),
+-- que não passam pelo caixa diário mas entram no resumo loja x família.
+CREATE TABLE IF NOT EXISTS public.despesas_fixas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome TEXT NOT NULL,
+    valor NUMERIC NOT NULL CHECK (valor >= 0),
+    categoria TEXT NOT NULL CHECK (categoria IN ('LOJA', 'FAMILIA')),
+    ativa BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.despesas_fixas ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow anon select" ON public.despesas_fixas FOR SELECT TO anon USING (true);
+CREATE POLICY "allow anon insert" ON public.despesas_fixas FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "allow anon update" ON public.despesas_fixas FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow anon delete" ON public.despesas_fixas FOR DELETE TO anon USING (true);
