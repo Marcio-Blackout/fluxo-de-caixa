@@ -1,0 +1,4 @@
+scripts/secrets/
+scripts/.venv/
+*.env
+.env

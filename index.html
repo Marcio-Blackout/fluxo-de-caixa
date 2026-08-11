@@ -5,136 +5,272 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Fluxo de Caixa</title>
+    <title>Painel de Controle</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --bg: #000000;
+            --bg-elev: #0a0a0a;
+            --surface: #111113;
+            --border: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --text: #fafaf9;
+            --text-dim: #a1a1aa;
+            --text-faint: #71717a;
+            --accent: #22c55e;
+            --accent-bright: #4ade80;
+            --accent-dim: rgba(34,197,94,0.12);
+            --danger: #ef4444;
+        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 50%, #0f1419 100%);
-            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+            background:
+                radial-gradient(ellipse 900px 500px at 15% -10%, rgba(34,197,94,0.10), transparent),
+                radial-gradient(ellipse 700px 500px at 100% 0%, rgba(34,197,94,0.06), transparent),
+                var(--bg);
+            color: var(--text);
             min-height: 100vh;
             padding: 20px;
         }
         .container { max-width: 800px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-        .header h1 { font-size: 24px; font-weight: 700; }
-        .status { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 8px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite; }
-        .status.offline .status-dot { background: #ef4444; animation: none; }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand-badge { width: 34px; height: 34px; filter: drop-shadow(0 0 10px rgba(34,197,94,0.5)); }
+        @keyframes logoSpin { to { transform: rotate(360deg); } }
+        .logo-spin { transform-origin: 50px 50px; animation: logoSpin 3.5s linear infinite; }
+        .header h1 { font-size: 19px; font-weight: 700; letter-spacing: 0.2px; }
+        .header .sub { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 600; }
+        .status { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; color: var(--text-dim); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+        .status.offline .status-dot { background: var(--danger); box-shadow: 0 0 8px var(--danger); animation: none; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .hero { background: linear-gradient(135deg, #4f46e5, #7c3aed, #a855f7); border-radius: 24px; padding: 32px 28px; margin-bottom: 20px; box-shadow: 0 20px 50px rgba(79, 70, 229, 0.3); position: relative; overflow: hidden; }
-        .hero::before { content: ''; position: absolute; top: -50%; right: -20%; width: 200px; height: 200px; background: rgba(255,255,255,0.05); border-radius: 50%; }
-        .hero-label { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.85; position: relative; z-index: 1; }
-        .balance { font-size: 48px; font-weight: 800; margin-top: 8px; position: relative; z-index: 1; }
+        .hero { background: linear-gradient(155deg, #0d1a12 0%, #0a0a0a 55%, #000 100%); border: 1px solid rgba(34,197,94,0.25); border-radius: 24px; padding: 32px 28px; margin-bottom: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04); position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: -60%; right: -15%; width: 260px; height: 260px; background: radial-gradient(circle, rgba(34,197,94,0.18), transparent 70%); border-radius: 50%; }
+        .hero-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.8px; color: var(--accent-bright); position: relative; z-index: 1; }
+        .balance { font-size: 46px; font-weight: 800; margin-top: 8px; position: relative; z-index: 1; letter-spacing: -0.5px; }
         .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
-        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; backdrop-filter: blur(10px); }
-        .card-label { font-size: 12px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .card-value { font-size: 24px; font-weight: 700; }
-        .card:nth-child(1) .card-value { color: #10b981; }
-        .card:nth-child(2) .card-value { color: #60a5fa; }
-        .card:nth-child(3) .card-value { color: #f59e0b; }
-        .table-container { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
-        .table-header { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
-        .table-header h3 { font-size: 16px; }
-        .table-count { font-size: 12px; color: #9ca3af; background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 20px; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; transition: border-color 0.2s; }
+        .card-label { font-size: 11px; color: var(--text-faint); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+        .card-value { font-size: 22px; font-weight: 700; }
+        .card:nth-child(1) .card-value { color: var(--accent-bright); }
+        .card:nth-child(2) .card-value { color: #e4e4e7; }
+        .card:nth-child(3) .card-value { color: #e4e4e7; }
+        .table-container { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
+        .table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .table-header h3 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); }
+        .table-count { font-size: 11px; font-weight: 600; color: var(--accent-bright); background: var(--accent-dim); padding: 4px 12px; border-radius: 20px; }
         .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; min-width: 500px; }
-        th { text-align: left; padding: 12px 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; border-bottom: 1px solid rgba(255,255,255,0.08); }
-        td { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; }
-        .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .badge-pix { background: rgba(16,185,129,0.15); color: #10b981; }
-        .badge-card { background: rgba(96,165,250,0.15); color: #60a5fa; }
-        .badge-cash { background: rgba(245,158,11,0.15); color: #f59e0b; }
-        .amount { font-weight: 700; color: #10b981; }
+        th { text-align: left; padding: 12px 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint); border-bottom: 1px solid var(--border); }
+        td { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; color: var(--text-dim); }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid transparent; }
+        .badge-pix { background: var(--accent-dim); color: var(--accent-bright); border-color: rgba(34,197,94,0.25); }
+        .badge-card { background: rgba(255,255,255,0.06); color: #d4d4d8; border-color: var(--border-strong); }
+        .badge-cash { background: rgba(255,255,255,0.06); color: #d4d4d8; border-color: var(--border-strong); }
+        .amount { font-weight: 700; color: var(--accent-bright); }
+        .btn-delete { background: none; border: none; cursor: pointer; font-size: 15px; padding: 6px; border-radius: 8px; opacity: 0.6; }
+        .btn-delete:hover { opacity: 1; background: rgba(239,68,68,0.12); }
         .actions { display: flex; gap: 12px; flex-wrap: wrap; }
-        .btn-primary { flex: 2; padding: 16px; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; color: white; background: linear-gradient(135deg, #4f46e5, #7c3aed); box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); min-width: 200px; }
+        .btn-primary { flex: 2; padding: 16px; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; color: #05170c; background: linear-gradient(135deg, var(--accent-bright), var(--accent)); box-shadow: 0 4px 20px rgba(34,197,94,0.35); min-width: 200px; }
         .btn-primary:active { transform: scale(0.98); }
-        .btn-secondary { flex: 1; padding: 16px; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; font-size: 16px; font-weight: 600; cursor: pointer; color: #cbd5e1; background: rgba(255,255,255,0.05); min-width: 120px; }
+        .btn-secondary { flex: 1; padding: 16px; border: 1px solid var(--border-strong); border-radius: 16px; font-size: 16px; font-weight: 600; cursor: pointer; color: var(--text-dim); background: var(--surface); min-width: 120px; }
         .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 1000; align-items: flex-end; justify-content: center; padding: 16px; }
         .modal.active { display: flex; }
-        .modal-content { background: linear-gradient(135deg, #1a1f2e, #0f1419); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px 20px 0 0; padding: 28px 24px; width: 100%; max-width: 450px; animation: slideUp 0.3s ease-out; }
+        .modal-content { background: linear-gradient(180deg, #0d0d0f, #000); border: 1px solid var(--border-strong); border-radius: 20px 20px 0 0; padding: 28px 24px; width: 100%; max-width: 450px; animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .modal h2 { font-size: 20px; margin-bottom: 20px; }
         .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 12px; font-weight: 600; color: #9ca3af; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-group input, .form-group select { width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #e2e8f0; font-size: 16px; font-family: inherit; }
+        .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--text-faint); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.6px; }
+        .form-group input, .form-group select { width: 100%; padding: 12px 16px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 16px; font-family: inherit; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
         .form-group select { appearance: none; }
         .modal-buttons { display: flex; gap: 10px; margin-top: 24px; }
-        .btn-cancel { flex: 1; padding: 14px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: white; border-radius: 12px; font-size: 15px; cursor: pointer; }
-        .btn-save { flex: 2; padding: 14px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border: none; color: white; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn-cancel { flex: 1; padding: 14px; border: 1px solid var(--border-strong); background: transparent; color: var(--text); border-radius: 12px; font-size: 15px; cursor: pointer; }
+        .btn-save { flex: 2; padding: 14px; background: linear-gradient(135deg, var(--accent-bright), var(--accent)); border: none; color: #05170c; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
         .btn-save:disabled { opacity: 0.6; }
-        .empty-state { text-align: center; padding: 40px; color: #6b7280; }
+        .empty-state { text-align: center; padding: 40px; color: var(--text-faint); }
         .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
         @media (max-width: 600px) {
             .cards { grid-template-columns: 1fr; }
             .balance { font-size: 36px; }
             .hero { padding: 24px 20px; }
-            .header h1 { font-size: 20px; }
+            .header h1 { font-size: 17px; }
+        }
+        .lock-screen { position: fixed; inset: 0; background:
+                radial-gradient(ellipse 900px 500px at 15% -10%, rgba(34,197,94,0.10), transparent),
+                radial-gradient(ellipse 700px 500px at 100% 100%, rgba(34,197,94,0.06), transparent),
+                var(--bg); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .lock-box { width: 100%; max-width: 360px; text-align: center; }
+        .lock-badge { width: 64px; height: 64px; margin: 0 auto 18px; filter: drop-shadow(0 0 16px rgba(34,197,94,0.5)); }
+        .lock-icon { font-size: 40px; margin-bottom: 16px; }
+        .lock-box h2 { font-size: 20px; margin-bottom: 6px; font-weight: 700; }
+        .lock-sub { font-size: 13px; color: var(--text-faint); margin-bottom: 24px; }
+        .lock-box input { width: 100%; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 16px; margin-bottom: 12px; text-align: center; letter-spacing: 2px; }
+        .lock-box input:focus { outline: none; border-color: var(--accent); }
+        .lock-box .btn-save, .lock-box .btn-primary { width: 100%; margin-bottom: 10px; }
+        .btn-bio { width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; border: 1px solid rgba(34,197,94,0.35); background: var(--accent-dim); color: var(--accent-bright); margin-bottom: 12px; }
+        .lock-error { color: var(--danger); font-size: 13px; margin-top: -4px; margin-bottom: 12px; min-height: 16px; }
+        .lock-hint { font-size: 11px; color: var(--text-faint); margin-top: 8px; }
+        .lock-link { background: none; border: none; color: var(--text-faint); font-size: 12px; text-decoration: underline; cursor: pointer; margin-top: 4px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 4px; }
+        .tab-btn { flex: 1; padding: 11px; border: none; border-radius: 10px; background: transparent; color: var(--text-faint); font-size: 13px; font-weight: 700; cursor: pointer; }
+        .tab-btn.active { background: var(--accent-dim); color: var(--accent-bright); }
+        .view { display: none; }
+        .view.active { display: block; }
+        .subtext { font-size: 12px; color: var(--text-faint); }
+        .modal-content.wide { max-height: 85vh; overflow-y: auto; }
+        .fieldset-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent-bright); margin: 20px 0 12px; }
+        .fieldset-title:first-of-type { margin-top: 0; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 13px; color: var(--text-dim); }
+        .checkbox-row input { width: auto; }
+        .contrato-card { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+        .contrato-info b { color: var(--text); }
+        .contrato-info .subtext { display: block; margin-top: 2px; }
+        .menu-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint); margin-bottom: 16px; text-align: center; }
+        .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .menu-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 18px 8px; text-align: center; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
+        .menu-tile:active { transform: scale(0.96); }
+        .menu-tile.enabled { border-color: rgba(34,197,94,0.3); }
+        .menu-tile.enabled:hover { border-color: var(--accent); }
+        .menu-tile.disabled { opacity: 0.42; cursor: default; }
+        .menu-tile .menu-icon { font-size: 26px; margin-bottom: 8px; }
+        .menu-tile .menu-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); line-height: 1.3; }
+        .menu-tile.enabled .menu-label { color: var(--text); }
+        .menu-soon { display: block; font-size: 8.5px; font-weight: 700; color: var(--text-faint); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .back-btn { background: none; border: none; color: var(--text-faint); font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0; margin-bottom: 16px; }
+        .back-btn:hover { color: var(--text); }
+        .link-list { }
+        .link-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; font-size: 14px; color: var(--text); }
+        .link-row:last-child { border-bottom: none; }
+        .link-row:hover { background: rgba(255,255,255,0.03); }
+        .link-row .arrow { color: var(--accent-bright); font-size: 15px; }
+        @media (max-width: 420px) {
+            .menu-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .menu-tile { padding: 14px 4px; border-radius: 14px; }
+            .menu-tile .menu-icon { font-size: 22px; }
+            .menu-tile .menu-label { font-size: 9.5px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="lock-screen" id="lockScreen">
+        <div class="lock-box" id="lockBox"></div>
+    </div>
+    <div class="container" id="appContainer" style="display:none;">
         <div class="header">
-            <h1>💰 Fluxo de Caixa</h1>
+            <div class="brand">
+                <svg class="brand-badge" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="48" fill="#111" stroke="#22C55E" stroke-width="3"/>
+                    <g class="logo-spin">
+                        <path d="M50 18 A32 32 0 1 1 18 50" stroke="#22C55E" stroke-width="5" stroke-linecap="round" fill="none"/>
+                        <polygon points="50,8 42,22 58,22" fill="#22C55E"/>
+                    </g>
+                    <text x="50" y="66" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="40" fill="white">B</text>
+                </svg>
+                <div>
+                    <h1>Painel de Controle</h1>
+                    <div class="sub">BlackOut</div>
+                </div>
+            </div>
             <div class="status" id="status">
                 <span class="status-dot"></span>
                 <span id="statusText">Conectando...</span>
             </div>
         </div>
 
-        <div class="hero">
-            <div class="hero-label">💎 Saldo Disponível</div>
-            <div class="balance" id="balance">R$ 0,00</div>
+        <div class="view active" id="viewHome">
+            <div class="menu-title">🖤 Painel de Serviços Blackout</div>
+            <div class="menu-grid" id="menuGrid"></div>
         </div>
 
-        <div class="cards">
-            <div class="card">
-                <div class="card-label">📱 Pix</div>
-                <div class="card-value" id="pix">R$ 0,00</div>
+        <div class="view" id="viewCaixa">
+            <button class="back-btn" onclick="goHome()">← Menu</button>
+            <div class="hero">
+                <div class="hero-label">💎 Saldo Disponível</div>
+                <div class="balance" id="balance">R$ 0,00</div>
             </div>
-            <div class="card">
-                <div class="card-label">💳 Cartão</div>
-                <div class="card-value" id="card">R$ 0,00</div>
+
+            <div class="cards">
+                <div class="card">
+                    <div class="card-label">📱 Pix</div>
+                    <div class="card-value" id="pix">R$ 0,00</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">💳 Cartão</div>
+                    <div class="card-value" id="card">R$ 0,00</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">💵 Dinheiro</div>
+                    <div class="card-value" id="cash">R$ 0,00</div>
+                </div>
             </div>
-            <div class="card">
-                <div class="card-label">💵 Dinheiro</div>
-                <div class="card-value" id="cash">R$ 0,00</div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>📋 Histórico de Entradas</h3>
+                    <span class="table-count" id="entryCount">0 registros</span>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>📅 Data</th>
+                                <th>📝 Descrição</th>
+                                <th>💳 Forma</th>
+                                <th>💰 Valor</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="rows">
+                            <tr>
+                                <td colspan="5">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">📭</div>
+                                        <div>Carregando...</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn-primary" onclick="openModal()">＋ Nova Entrada</button>
+                <button class="btn-secondary" onclick="loadData()">🔄 Atualizar</button>
             </div>
         </div>
 
-        <div class="table-container">
-            <div class="table-header">
-                <h3>📋 Histórico de Entradas</h3>
-                <span class="table-count" id="entryCount">0 registros</span>
+        <div class="view" id="viewTermos">
+            <button class="back-btn" onclick="goHome()">← Menu</button>
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>📄 Termos de Responsabilidade</h3>
+                    <span class="table-count" id="termoCount">0 registros</span>
+                </div>
+                <div id="termoRows">
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <div>Carregando...</div>
+                    </div>
+                </div>
             </div>
-            <div class="table-scroll">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>📅 Data</th>
-                            <th>📝 Descrição</th>
-                            <th>💳 Forma</th>
-                            <th>💰 Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rows">
-                        <tr>
-                            <td colspan="4">
-                                <div class="empty-state">
-                                    <div class="empty-icon">📭</div>
-                                    <div>Carregando...</div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+
+            <div class="actions">
+                <button class="btn-primary" onclick="openTermoModal()">＋ Novo Termo</button>
+                <button class="btn-secondary" onclick="loadContratos()">🔄 Atualizar</button>
             </div>
         </div>
 
-        <div class="actions">
-            <button class="btn-primary" onclick="openModal()">＋ Nova Entrada</button>
-            <button class="btn-secondary" onclick="loadData()">🔄 Atualizar</button>
+        <div class="view" id="viewSub">
+            <button class="back-btn" onclick="goHome()">← Menu</button>
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 id="subTitle">-</h3>
+                </div>
+                <div id="subLinks" class="link-list"></div>
+            </div>
         </div>
     </div>
 
@@ -166,10 +302,253 @@
         </div>
     </div>
 
-    <script>
-        // ⚠️ COLE AQUI A URL DO SEU WEB APP (a que terminou com /exec)
-        const URL = 'https://script.google.com/macros/s/AKfycbzVIi34URyznwCDuyscvtG9vgfnCKCzM11WYponVe1C0M042cZ7p3Fb4HCtTxPTbmvt/exec';
-        
+    <div class="modal" id="termoModal">
+        <div class="modal-content wide">
+            <h2>📄 Novo Termo de Responsabilidade</h2>
+            <form onsubmit="saveTermo(event)">
+                <div class="fieldset-title">👤 Proprietário</div>
+                <div class="form-group"><label>Nome completo</label><input type="text" id="t_prop_nome" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label>CPF</label><input type="text" id="t_prop_cpf" inputmode="numeric"></div>
+                    <div class="form-group"><label>RG</label><input type="text" id="t_prop_rg"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Gênero</label><input type="text" id="t_prop_genero"></div>
+                    <div class="form-group"><label>Estado civil</label><input type="text" id="t_prop_estado_civil"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Nacionalidade</label><input type="text" id="t_prop_nacionalidade" value="Brasileiro(a)"></div>
+                    <div class="form-group"><label>Profissão</label><input type="text" id="t_prop_profissao"></div>
+                </div>
+                <div class="form-group"><label>Endereço</label><input type="text" id="t_prop_endereco"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Bairro</label><input type="text" id="t_prop_bairro"></div>
+                    <div class="form-group"><label>Cidade/UF</label><input type="text" id="t_prop_cidade_uf" placeholder="Camboriú/SC"></div>
+                </div>
+
+                <div class="checkbox-row">
+                    <input type="checkbox" id="t_mesmo_responsavel" checked onchange="toggleResponsavelFields()">
+                    <label for="t_mesmo_responsavel">Responsável é o próprio proprietário</label>
+                </div>
+
+                <div id="t_responsavel_fields" style="display:none;">
+                    <div class="fieldset-title">🧾 Responsável pelo veículo</div>
+                    <div class="form-group"><label>Nome completo</label><input type="text" id="t_resp_nome"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>CPF</label><input type="text" id="t_resp_cpf" inputmode="numeric"></div>
+                        <div class="form-group"><label>RG</label><input type="text" id="t_resp_rg"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Gênero</label><input type="text" id="t_resp_genero"></div>
+                        <div class="form-group"><label>Estado civil</label><input type="text" id="t_resp_estado_civil"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Nacionalidade</label><input type="text" id="t_resp_nacionalidade" value="Brasileiro(a)"></div>
+                        <div class="form-group"><label>Profissão</label><input type="text" id="t_resp_profissao"></div>
+                    </div>
+                    <div class="form-group"><label>Endereço</label><input type="text" id="t_resp_endereco"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Bairro</label><input type="text" id="t_resp_bairro"></div>
+                        <div class="form-group"><label>Cidade/UF</label><input type="text" id="t_resp_cidade_uf" placeholder="Camboriú/SC"></div>
+                    </div>
+                </div>
+
+                <div class="fieldset-title">🚗 Veículo</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Fabricante</label><input type="text" id="t_fabricante"></div>
+                    <div class="form-group"><label>Modelo</label><input type="text" id="t_modelo"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Ano fab./modelo</label><input type="text" id="t_ano" placeholder="2014/2014"></div>
+                    <div class="form-group"><label>Cor</label><input type="text" id="t_cor"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Placa</label><input type="text" id="t_placa" required></div>
+                    <div class="form-group"><label>Renavam</label><input type="text" id="t_renavam" inputmode="numeric"></div>
+                </div>
+                <div class="form-group"><label>Chassi</label><input type="text" id="t_chassi"></div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="closeTermoModal()">Cancelar</button>
+                    <button type="submit" class="btn-save">💾 Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+        const SUPABASE_URL = 'https://kihnavaovspdjnegcraj.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_h5AITv-_Fjmnq-xC6UC8xg_8CSMLoZK';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ===== Bloqueio de acesso (senha + Face ID / Digital via WebAuthn) =====
+        // Proteção local no dispositivo: não é autenticação de servidor, apenas
+        // uma trava de acesso rápido no navegador (a chave do Supabase já é pública).
+        const PWD_KEY = 'fc_pwd_hash';
+        const BIO_KEY = 'fc_bio_credential_id';
+
+        async function sha256(text) {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+            return btoa(String.fromCharCode(...new Uint8Array(buf)));
+        }
+
+        function b64uToBuf(b64u) {
+            const b64 = b64u.replace(/-/g, '+').replace(/_/g, '/').padEnd(b64u.length + (4 - b64u.length % 4) % 4, '=');
+            return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+        }
+        function bufToB64u(buf) {
+            return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        const bioSupported = !!(window.PublicKeyCredential && window.isSecureContext);
+
+        const LOGO_SVG = `<svg class="lock-badge" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="48" fill="#111" stroke="#22C55E" stroke-width="3"/>
+            <g class="logo-spin">
+                <path d="M50 18 A32 32 0 1 1 18 50" stroke="#22C55E" stroke-width="5" stroke-linecap="round" fill="none"/>
+                <polygon points="50,8 42,22 58,22" fill="#22C55E"/>
+            </g>
+            <text x="50" y="66" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="40" fill="white">B</text>
+        </svg>`;
+
+        function unlockApp() {
+            document.getElementById('lockScreen').style.display = 'none';
+            document.getElementById('appContainer').style.display = '';
+            renderMenu();
+        }
+
+        async function registerBiometric() {
+            const challenge = crypto.getRandomValues(new Uint8Array(32));
+            const userId = crypto.getRandomValues(new Uint8Array(16));
+            const cred = await navigator.credentials.create({
+                publicKey: {
+                    challenge,
+                    rp: { name: 'Painel de Controle' },
+                    user: { id: userId, name: 'usuario', displayName: 'Usuário' },
+                    pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+                    authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+                    timeout: 60000
+                }
+            });
+            localStorage.setItem(BIO_KEY, bufToB64u(cred.rawId));
+        }
+
+        async function authBiometric() {
+            const credId = localStorage.getItem(BIO_KEY);
+            if (!credId) return false;
+            const challenge = crypto.getRandomValues(new Uint8Array(32));
+            try {
+                await navigator.credentials.get({
+                    publicKey: {
+                        challenge,
+                        allowCredentials: [{ id: b64uToBuf(credId), type: 'public-key' }],
+                        userVerification: 'required',
+                        timeout: 60000
+                    }
+                });
+                return true;
+            } catch (e) {
+                console.warn('Face ID/Digital cancelado ou falhou:', e);
+                return false;
+            }
+        }
+
+        function renderSetupScreen() {
+            const box = document.getElementById('lockBox');
+            box.innerHTML = `
+                ${LOGO_SVG}
+                <h2>Criar senha de acesso</h2>
+                <div class="lock-sub">Defina uma senha para proteger o fluxo de caixa neste aparelho</div>
+                <input type="password" id="newPwd" placeholder="Nova senha" inputmode="numeric" autocomplete="new-password">
+                <input type="password" id="newPwd2" placeholder="Confirmar senha" inputmode="numeric" autocomplete="new-password">
+                <div class="lock-error" id="lockErr"></div>
+                <button class="btn-save" id="setupBtn">💾 Salvar senha</button>
+            `;
+            document.getElementById('setupBtn').onclick = async () => {
+                const p1 = document.getElementById('newPwd').value;
+                const p2 = document.getElementById('newPwd2').value;
+                const err = document.getElementById('lockErr');
+                if (!p1 || p1.length < 4) { err.textContent = 'Use pelo menos 4 caracteres'; return; }
+                if (p1 !== p2) { err.textContent = 'As senhas não coincidem'; return; }
+                localStorage.setItem(PWD_KEY, await sha256(p1));
+                if (bioSupported) {
+                    renderOfferBiometricScreen();
+                } else {
+                    unlockApp();
+                }
+            };
+        }
+
+        function renderOfferBiometricScreen() {
+            const box = document.getElementById('lockBox');
+            box.innerHTML = `
+                ${LOGO_SVG}
+                <h2>Ativar Face ID / Digital?</h2>
+                <div class="lock-sub">Desbloqueie mais rápido nas próximas vezes usando a biometria deste aparelho</div>
+                <button class="btn-bio" id="enableBioBtn">🆔 Ativar Face ID / Digital</button>
+                <button class="lock-link" id="skipBioBtn">Agora não</button>
+                <div class="lock-error" id="lockErr"></div>
+            `;
+            document.getElementById('enableBioBtn').onclick = async () => {
+                try {
+                    await registerBiometric();
+                    unlockApp();
+                } catch (e) {
+                    console.error(e);
+                    document.getElementById('lockErr').textContent = 'Não foi possível ativar. Você ainda pode usar a senha.';
+                }
+            };
+            document.getElementById('skipBioBtn').onclick = unlockApp;
+        }
+
+        function renderLoginScreen() {
+            const box = document.getElementById('lockBox');
+            const hasBio = bioSupported && !!localStorage.getItem(BIO_KEY);
+            box.innerHTML = `
+                ${LOGO_SVG}
+                <h2>Painel de Controle</h2>
+                <div class="lock-sub">Digite a senha para continuar</div>
+                ${hasBio ? '<button class="btn-bio" id="bioBtn">🆔 Desbloquear com Face ID / Digital</button>' : ''}
+                <input type="password" id="loginPwd" placeholder="Senha" inputmode="numeric" autocomplete="current-password">
+                <div class="lock-error" id="lockErr"></div>
+                <button class="btn-primary" id="loginBtn">Entrar</button>
+                ${hasBio ? '<button class="lock-link" id="forgetBioBtn">Não usar biometria neste aparelho</button>' : ''}
+            `;
+            const tryPassword = async () => {
+                const p = document.getElementById('loginPwd').value;
+                const hash = localStorage.getItem(PWD_KEY);
+                if (await sha256(p) === hash) {
+                    unlockApp();
+                } else {
+                    document.getElementById('lockErr').textContent = 'Senha incorreta';
+                }
+            };
+            document.getElementById('loginBtn').onclick = tryPassword;
+            document.getElementById('loginPwd').addEventListener('keydown', (e) => { if (e.key === 'Enter') tryPassword(); });
+            if (hasBio) {
+                document.getElementById('bioBtn').onclick = async () => {
+                    if (await authBiometric()) unlockApp();
+                    else document.getElementById('lockErr').textContent = 'Não foi possível verificar. Tente a senha.';
+                };
+                document.getElementById('forgetBioBtn').onclick = () => {
+                    localStorage.removeItem(BIO_KEY);
+                    renderLoginScreen();
+                };
+                // Tenta biometria automaticamente ao abrir, se disponível
+                setTimeout(() => document.getElementById('bioBtn')?.click(), 300);
+            }
+        }
+
+        function initLock() {
+            if (!localStorage.getItem(PWD_KEY)) {
+                renderSetupScreen();
+            } else {
+                renderLoginScreen();
+            }
+        }
+
         const fmt = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
         function updateStatus(online, message) {
@@ -181,103 +560,109 @@
 
         async function loadData() {
             updateStatus(false, '⏳ Carregando...');
-            
+
             try {
-                const response = await fetch(URL + '?action=getData');
-                console.log('📡 Resposta:', response);
-                
-                const data = await response.json();
-                console.log('📊 Dados:', data);
-                
-                // Verifica se a API retornou erro
-                if (data.success === false) {
-                    throw new Error(data.error || data.message || 'Erro desconhecido');
-                }
-                
-                // Pega os totais
-                const t = data.totals || {};
-                document.getElementById('balance').textContent = fmt(t.geral);
-                document.getElementById('pix').textContent = fmt(t.pix);
-                document.getElementById('card').textContent = fmt(t.cartao);
-                document.getElementById('cash').textContent = fmt(t.dinheiro);
-                
-                // Pega as entradas
-                const entries = data.entries || [];
-                document.getElementById('entryCount').textContent = entries.length + ' registro' + (entries.length !== 1 ? 's' : '');
-                
+                const { data: entries, error } = await supabase
+                    .from('entries')
+                    .select('*')
+                    .order('entry_date', { ascending: false })
+                    .order('created_at', { ascending: false });
+
+                if (error) throw new Error(error.message);
+
+                console.log('📊 Dados:', entries);
+
+                // Calcula os totais
+                const totals = (entries || []).reduce((acc, e) => {
+                    const amt = Number(e.amount || 0);
+                    acc.geral += amt;
+                    if (e.method === 'Pix') acc.pix += amt;
+                    else if (e.method === 'Cartão') acc.cartao += amt;
+                    else acc.dinheiro += amt;
+                    return acc;
+                }, { geral: 0, pix: 0, cartao: 0, dinheiro: 0 });
+
+                document.getElementById('balance').textContent = fmt(totals.geral);
+                document.getElementById('pix').textContent = fmt(totals.pix);
+                document.getElementById('card').textContent = fmt(totals.cartao);
+                document.getElementById('cash').textContent = fmt(totals.dinheiro);
+
+                document.getElementById('entryCount').textContent = (entries || []).length + ' registro' + (entries.length !== 1 ? 's' : '');
+
                 const rows = document.getElementById('rows');
-                
-                if (entries.length === 0) {
-                    rows.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📭</div><div>Nenhuma entrada ainda</div></div></td></tr>';
+
+                if (!entries || entries.length === 0) {
+                    rows.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📭</div><div>Nenhuma entrada ainda</div></div></td></tr>';
                 } else {
                     rows.innerHTML = entries.map(e => {
                         const badgeClass = 'badge-' + (e.method === 'Pix' ? 'pix' : e.method === 'Cartão' ? 'card' : 'cash');
                         return `<tr>
-                            <td>${e.date || '-'}</td>
-                            <td>${e.desc || '-'}</td>
+                            <td>${e.entry_date || '-'}</td>
+                            <td>${escapeHtml(e.description) || '-'}</td>
                             <td><span class="badge ${badgeClass}">${e.method || '-'}</span></td>
                             <td class="amount">${fmt(e.amount)}</td>
+                            <td><button class="btn-delete" onclick="deleteEntry('${e.id}')" title="Excluir">🗑️</button></td>
                         </tr>`;
                     }).join('');
                 }
-                
+
                 updateStatus(true);
                 console.log('✅ Dados carregados!');
-                
+
             } catch (error) {
                 console.error('❌ Erro:', error);
                 updateStatus(false, '❌ ' + error.message);
-                
-                document.getElementById('rows').innerHTML = `<tr><td colspan="4"><div class="empty-state" style="color:#ef4444;">⚠️ ${error.message}<br><small style="font-size:12px;color:#666;">Verifique o console (F12) para detalhes</small></div></td></tr>`;
+
+                document.getElementById('rows').innerHTML = `<tr><td colspan="5"><div class="empty-state" style="color:#ef4444;">⚠️ ${error.message}<br><small style="font-size:12px;color:#666;">Verifique o console (F12) para detalhes</small></div></td></tr>`;
+            }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str ?? '';
+            return div.innerHTML;
+        }
+
+        async function deleteEntry(id) {
+            if (!confirm('Excluir esta entrada? Essa ação não pode ser desfeita.')) return;
+            try {
+                const { error } = await supabase.from('entries').delete().eq('id', id);
+                if (error) throw new Error(error.message);
+                await loadData();
+            } catch (error) {
+                console.error('❌ Erro ao excluir:', error);
+                alert('Erro ao excluir: ' + error.message);
             }
         }
 
         async function saveEntry(e) {
             e.preventDefault();
-            
+
             const desc = document.getElementById('desc').value.trim();
             const method = document.getElementById('method').value;
             const amount = parseFloat(document.getElementById('amount').value);
-            
+
             if (!desc || !amount || amount <= 0) {
                 alert('⚠️ Preencha todos os campos corretamente');
                 return;
             }
-            
+
             const btn = document.querySelector('.btn-save');
             const originalText = btn.textContent;
             btn.textContent = '⏳ Salvando...';
             btn.disabled = true;
-            
+
             try {
-                const payload = {
-                    action: 'addEntry',
-                    desc: desc,
-                    method: method,
-                    amount: amount
-                };
-                
-                console.log('📤 Enviando:', payload);
-                
-                const response = await fetch(URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await response.json();
-                console.log('📥 Resposta:', data);
-                
-                if (data.success) {
-                    closeModal();
-                    await loadData();
-                    alert('✅ Entrada adicionada com sucesso!');
-                } else {
-                    throw new Error(data.error || data.message || 'Erro ao salvar');
-                }
-                
+                const { error } = await supabase
+                    .from('entries')
+                    .insert({ description: desc, method: method, amount: amount });
+
+                if (error) throw new Error(error.message);
+
+                closeModal();
+                await loadData();
+                alert('✅ Entrada adicionada com sucesso!');
+
             } catch (error) {
                 console.error('❌ Erro ao salvar:', error);
                 alert('Erro: ' + error.message);
@@ -286,6 +671,422 @@
                 btn.disabled = false;
             }
         }
+
+        window.saveEntry = saveEntry;
+        window.loadData = loadData;
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.deleteEntry = deleteEntry;
+
+        // ===== Aba: Termos de Responsabilidade (pessoas / ativos / contratos) =====
+        const INVALID_STRINGS = new Set(['', 'ddd', 'nan', 'null', 'none', 'n/a']);
+
+        function cleanStr(val) {
+            if (val === null || val === undefined) return null;
+            const v = String(val).trim();
+            return INVALID_STRINGS.has(v.toLowerCase()) ? null : v;
+        }
+
+        function cleanDigits(val) {
+            const v = cleanStr(val);
+            if (!v) return null;
+            const digits = v.replace(/\D/g, '');
+            return digits || null;
+        }
+
+        function splitCidadeUf(val) {
+            const v = cleanStr(val);
+            if (!v) return { cidade: null, estado: null };
+            if (v.includes('/')) {
+                const idx = v.lastIndexOf('/');
+                return { cidade: v.slice(0, idx).trim() || null, estado: v.slice(idx + 1).trim() || null };
+            }
+            return { cidade: v, estado: null };
+        }
+
+        // ===== Painel de Serviços Blackout (menu inicial) =====
+        // Espelha o grid de atalhos da planilha "PAINEL DE CONTROLE" usada na loja.
+        // Só os módulos já migrados pro Supabase (financeiro, contratos) e os links
+        // externos reais têm ação; o resto fica marcado "em breve" até serem migrados.
+        const MENU_ITEMS = [
+            { icon: '📄', label: 'Currículo', action: { type: 'sub', key: 'curriculo' } },
+            { icon: '📝', label: 'Declaração', action: { type: 'sub', key: 'declaracao' } },
+            { icon: '✂️', label: 'Tirar Fundo', action: { type: 'link', url: 'https://www.remove.bg/pt-br' } },
+            { icon: '📑', label: 'Contratos', action: { type: 'view', view: 'termos' } },
+            { icon: '🩺', label: 'Exames', action: { type: 'sub', key: 'exames' } },
+            { icon: '🧾', label: 'Boletos', action: { type: 'sub', key: 'boletos' } },
+            { icon: '🚓', label: 'Detran', action: { type: 'sub', key: 'detran' } },
+            { icon: '🏛️', label: 'Prefeitura', action: { type: 'sub', key: 'prefeitura' } },
+            { icon: '🔍', label: 'Antecedentes', action: { type: 'sub', key: 'antecedentes' } },
+            { icon: '💳', label: 'Cartões Lojas', action: { type: 'sub', key: 'cartoes' } },
+            { icon: '📞', label: 'Telefonia', action: { type: 'sub', key: 'telefonia' } },
+            { icon: '💡', label: 'Água/Luz', action: { type: 'sub', key: 'luz_agua' } },
+            { icon: '🔧', label: 'Prestadora', action: { type: 'sub', key: 'prestadora' } },
+            { icon: '📧', label: 'Email', action: { type: 'link', url: 'https://outlook.live.com/mail/0/' } },
+            { icon: '💬', label: 'WhatsApp', action: { type: 'link', url: 'https://web.whatsapp.com/' } },
+            { icon: '💰', label: 'Financeiro', action: { type: 'view', view: 'caixa' } },
+        ];
+
+        // Sub-painéis extraídos das abas "PAINEL X" da planilha original — cada um é
+        // uma lista de links diretos (portais de terceiros ou formulários de cliente),
+        // exatamente como a loja usa hoje. Sem backend: só abre a URL em nova aba.
+        const SUBPANELS = {
+            curriculo: { title: '📄 Currículo', items: [
+                { label: 'Formulário do Cliente', url: 'https://forms.gle/davEvSQfJrXt7jxL6' },
+            ]},
+            declaracao: { title: '📝 Declaração', items: [
+                { label: 'Residência', url: 'https://docs.google.com/forms/d/e/1FAIpQLSdxSw0WVqhy_J3BzSPRBy3wBV2sCAvx3LehqivWnNDJhT6kyw/viewform' },
+                { label: 'Trabalho (c/ CNPJ)', url: 'https://forms.gle/FnKADnbqrArZLTy27' },
+                { label: 'Trabalho (sem CNPJ)', url: 'https://forms.gle/FnKADnbqrArZLTy27' },
+                { label: 'Autônomo', url: 'https://forms.gle/jT8yn53PPegfPbis5' },
+                { label: 'União Estável', url: 'https://forms.gle/mZhSrt7NW787mrQP6' },
+                { label: 'Procuração', url: 'https://forms.gle/iGZMNDWaaU4zcfEk9' },
+                { label: 'Procuração Detran', url: 'https://forms.gle/JekGc5kXbSzszsmm6' },
+                { label: 'Termo de Responsabilidade (genérico)', url: 'https://forms.gle/GHAGj64EqjMdYyKE7' },
+            ]},
+            exames: { title: '🩺 Exames', items: [
+                { label: 'Lab. Camboriú', url: 'https://www.laboratoriocamboriu.com.br/' },
+                { label: 'Central de Exames', url: 'https://centraldeexames.shiftcloud.com.br/shift/lis/cexames/elis/s01.iu.web.Login.cls' },
+                { label: 'Clínica MCI', url: 'https://imedical.mciimagem.com.br:9595/imedical/servlet/app.hashcod' },
+                { label: 'Ledra Laboratório', url: 'https://web41.concentsistemas.com.br/ConcentWebCli1050/servlet/hlab8000?8,0' },
+                { label: 'L. Gimenes', url: 'https://resultados.uniexames.srv.br/logins/login' },
+                { label: 'Milclin', url: 'http://bitlabenterprise.com.br/milclin/default/' },
+                { label: 'Marieta Exames', url: 'https://www.hospitalmarieta.org.br/' },
+                { label: 'Unimed', url: 'https://site.unimedlitoral.com.br/exames-de-laboratorio-ou-de-imagem/' },
+                { label: 'Kozma', url: 'https://rpf.kozma.com.br/login' },
+            ]},
+            boletos: { title: '🧾 Boletos', items: [
+                { label: 'Banco do Brasil', url: 'https://boleto.apps.bb.com.br/segunda-via' },
+                { label: 'Sicredi', url: 'https://www.sicredi.com.br/segundaviaboleto/' },
+                { label: 'Itaú', url: 'https://www.itau.com.br/servicos/boletos/atualizar' },
+                { label: 'Santander', url: 'https://www.santander.com.br/2-via-boleto?estado=comeco' },
+                { label: 'Cecred', url: 'https://www.viacredi.coop.br/segunda-via-e-atualizacao-de-boletos' },
+                { label: 'Sicoob', url: 'https://www.sicoob.com.br/web/sicoob/segunda-via-de-boleto' },
+                { label: 'Banrisul', url: 'https://ww8.banrisul.com.br/brb/link/Brbw2Lhw_Bloqueto_Titulos_Internet.aspx?SegundaVia=1' },
+                { label: 'Original', url: 'https://secure1.nexxera.com/cobranca/consulta/viaBoletoOriginal.do' },
+                { label: 'Safra', url: 'https://www.safrafinanceira.com.br/documentos-solicitacoes/2-via-boleto' },
+                { label: 'Bradesco', url: 'https://www.ib12.bradesco.com.br/ibpfsegundaviaboleto/segundaViaBoletoPesquisarLinhaDigitavel.do' },
+            ]},
+            detran: { title: '🚓 Detran', items: [
+                { label: 'Detran SC — Veículos', url: 'https://www.detran.sc.gov.br/veiculos/consultas/' },
+                { label: 'Guias de CNH', url: 'https://www.detran.sc.gov.br/cnh/consultas/' },
+                { label: 'Gov.com (login)', url: 'https://servicos.detran.sc.gov.br/login' },
+                { label: 'Detran PR — Extrato de Débito', url: 'https://www.extratodebito.detran.pr.gov.br/detranextratos/geraExtrato.do?action=iniciarProcesso' },
+            ]},
+            prefeitura: { title: '🏛️ Prefeitura', items: [
+                { label: 'IPTU', url: 'https://camboriu.atende.net/autoatendimento/servicos/guias-de-iptu/detalhar/1' },
+                { label: '2ª Via CPF', url: 'https://servicos.receita.fazenda.gov.br/Servicos/CPF/ImpressaoComprovante/ConsultaImpressao.asp' },
+                { label: 'MEI', url: 'http://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/pgmei.app/Identificacao' },
+                { label: 'Atualiza INSS', url: 'https://sal.rfb.gov.br/PortalSalInternet/faces/pages/index.xhtml' },
+                { label: 'Título de Voto', url: 'https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral' },
+                { label: 'IPTU Balneário Camboriú', url: 'https://cidadao.bc.sc.gov.br/cidadao/balneario_camboriu/portal/servicos/debitos?params=NA%3D%3D' },
+                { label: 'Documentos (Educação)', url: 'https://educacao.camboriu.sc.gov.br/documentacao/' },
+                { label: 'Agenda RG', url: 'https://www.policiacientifica.sc.gov.br/carteira-de-identidade/' },
+                { label: 'Dívida Ativa', url: 'https://camboriu.atende.net/autoatendimento/servicos/guias-divida-ativa/detalhar/1' },
+            ]},
+            antecedentes: { title: '🔍 Antecedentes', items: [
+                { label: 'Estadual (TJSC)', url: 'https://www.tjsc.jus.br/web/judicial/certidoes' },
+                { label: 'EPROC', url: 'https://certeproc1g.tjsc.jus.br/' },
+                { label: 'Eleitoral', url: 'https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral' },
+                { label: 'Militar (União)', url: 'https://www.stm.jus.br/servicos-ao-cidadao/atendimentoaocidadao/certidao-negativa?view=default' },
+                { label: 'Federal (TRF4)', url: 'http://www2.trf4.jus.br/trf4/processos/certidao/index.php' },
+                { label: 'Situação CPF', url: 'https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp' },
+                { label: 'Boletim de Ocorrência', url: 'https://delegaciavirtual.sc.gov.br/nova-ocorrencia' },
+                { label: 'Impressão de Título', url: 'https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral' },
+            ]},
+            cartoes: { title: '💳 Cartões de Lojas', items: [
+                { label: 'Riachuelo', url: 'https://www.midway.com.br/consulta-boleto' },
+                { label: 'Hipercard', url: 'https://www.hipercard.com.br/cartoes/fatura' },
+                { label: 'Lojas Renner', url: 'https://www.realizesolucoesfinanceiras.com.br/cartoes-renner/login' },
+                { label: 'Calcard', url: 'https://sejaouze.com.br/' },
+                { label: 'Cassol', url: 'https://portador-cartaocassol.mob4pay.com/' },
+                { label: 'Havan', url: 'https://cliente.havan.com.br/portal/cartao/consulta' },
+                { label: 'Vuon Card', url: 'https://portador-vuon.mob4pay.com/' },
+                { label: 'Magazine Luiza', url: 'https://www.magazineluiza.com.br/boleto/novo/impressao/' },
+                { label: 'Santander (cartão)', url: 'https://pf.santandernet.com.br/LOGBBR_NS_ENS/ChannelDriver.ssobto?dse_contextRoot=true' },
+                { label: 'Carnê Santander', url: 'https://www.cliente.santanderfinanciamentos.com.br/portalcliente/' },
+                { label: 'Cetelem', url: 'https://www.cetelem.com.br/cartoes/2-via-de-fatura' },
+                { label: 'Casas Bahia', url: 'https://casasbahia.digital/' },
+                { label: 'Porto Seguro', url: 'https://www.portoseguro.com.br/pdc/login' },
+            ]},
+            telefonia: { title: '📞 Telefonia', items: [
+                { label: 'Vivo', url: 'https://login.vivo.com.br/loginmarca/appmanager/marca/publicoNovoLogin' },
+                { label: 'Oi', url: 'https://www.oi.com.br/minha-oi/codigo-de-barras/' },
+                { label: 'Ultra Wifi', url: 'https://assinante.ultrawifi.com.br/central_assinante_web/login' },
+                { label: 'Minha Claro', url: 'http://servicos.netcombo.com.br/netPortalWEB/appmanager/portal/desktop' },
+                { label: 'CCS Telecom', url: 'https://portal.ccstelecom.net.br/auth/login' },
+                { label: 'CCS 2ª Via', url: 'https://portal.ccstelecom.com.br/login' },
+                { label: 'Acqua Telecom', url: 'https://central.acquatelecom.com.br/central_assinante_web/' },
+                { label: 'Voue Telecom', url: 'https://central.vouetelecom.com.br/central_assinante_web/login' },
+            ]},
+            luz_agua: { title: '💡 Água / Luz', items: [
+                { label: 'Celesc', url: 'https://agenciaweb.celesc.com.br/AgenciaWeb/autenticar/loginCliente.do' },
+                { label: 'Águas de Camboriú', url: 'https://cliente.aguasdecamboriu.com.br/entrar' },
+                { label: 'Casan', url: 'https://balneariocamboriu.jtech.com.br/' },
+                { label: 'Copel (PR)', url: 'https://www.copel.com/site/copel-distribuicao/atendimento/segunda-via-sem-senha/' },
+                { label: 'Cerpalo', url: 'https://cerpalo.useallcloud.com.br/AgenciaVirtual/SegundaViaRapida/Login' },
+            ]},
+            prestadora: { title: '🔧 Prestadora de Serviço', items: [
+                { label: 'Formulário do Cliente', url: 'https://forms.gle/XpAfawbKGbXeonNT6' },
+            ]},
+        };
+
+        let viewsInitialized = { caixa: false, termos: false };
+
+        function renderMenu() {
+            const grid = document.getElementById('menuGrid');
+            grid.innerHTML = MENU_ITEMS.map((item, i) => {
+                const enabled = !!item.action;
+                return `<div class="menu-tile ${enabled ? 'enabled' : 'disabled'}" onclick="handleMenuClick(${i})">
+                    <div class="menu-icon">${item.icon}</div>
+                    <div class="menu-label">${item.label}${enabled ? '' : '<span class="menu-soon">Em breve</span>'}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function handleMenuClick(index) {
+            const item = MENU_ITEMS[index];
+            if (!item.action) return;
+            if (item.action.type === 'link') {
+                window.open(item.action.url, '_blank', 'noopener');
+            } else if (item.action.type === 'view') {
+                openView(item.action.view);
+            } else if (item.action.type === 'sub') {
+                openSubPanel(item.action.key);
+            }
+        }
+        window.handleMenuClick = handleMenuClick;
+
+        function openView(view) {
+            document.getElementById('viewHome').classList.remove('active');
+            document.getElementById('viewSub').classList.remove('active');
+            document.getElementById('viewCaixa').classList.toggle('active', view === 'caixa');
+            document.getElementById('viewTermos').classList.toggle('active', view === 'termos');
+            if (!viewsInitialized[view]) {
+                viewsInitialized[view] = true;
+                if (view === 'caixa') loadData();
+                else if (view === 'termos') loadContratos();
+            }
+        }
+
+        function openSubPanel(key) {
+            const panel = SUBPANELS[key];
+            if (!panel) return;
+            document.getElementById('viewHome').classList.remove('active');
+            document.getElementById('viewCaixa').classList.remove('active');
+            document.getElementById('viewTermos').classList.remove('active');
+            document.getElementById('subTitle').textContent = panel.title;
+            document.getElementById('subLinks').innerHTML = panel.items.map(item =>
+                `<div class="link-row" onclick="window.open('${item.url}', '_blank', 'noopener')">
+                    <span>${escapeHtml(item.label)}</span>
+                    <span class="arrow">↗</span>
+                </div>`
+            ).join('');
+            document.getElementById('viewSub').classList.add('active');
+        }
+        window.openSubPanel = openSubPanel;
+
+        function goHome() {
+            document.getElementById('viewCaixa').classList.remove('active');
+            document.getElementById('viewTermos').classList.remove('active');
+            document.getElementById('viewSub').classList.remove('active');
+            document.getElementById('viewHome').classList.add('active');
+        }
+        window.goHome = goHome;
+
+        async function upsertPessoa(pessoaData) {
+            if (!pessoaData.nome) return null;
+            let existing = null;
+            if (pessoaData.cpf) {
+                const { data } = await supabase.from('pessoas').select('id').eq('cpf', pessoaData.cpf).limit(1);
+                if (data && data.length) existing = data[0];
+            }
+            if (!existing) {
+                const { data } = await supabase.from('pessoas').select('id').ilike('nome', pessoaData.nome).limit(1);
+                if (data && data.length) existing = data[0];
+            }
+            if (existing) {
+                const { error } = await supabase.from('pessoas').update(pessoaData).eq('id', existing.id);
+                if (error) throw new Error(error.message);
+                return existing.id;
+            }
+            const { data, error } = await supabase.from('pessoas').insert(pessoaData).select('id').single();
+            if (error) throw new Error(error.message);
+            return data.id;
+        }
+
+        async function upsertAtivo(ativoData) {
+            let existing = null;
+            if (ativoData.placa) {
+                const { data } = await supabase.from('ativos').select('id').eq('placa', ativoData.placa).limit(1);
+                if (data && data.length) existing = data[0];
+            }
+            if (!existing && ativoData.renavam) {
+                const { data } = await supabase.from('ativos').select('id').eq('renavam', ativoData.renavam).limit(1);
+                if (data && data.length) existing = data[0];
+            }
+            if (existing) {
+                const { error } = await supabase.from('ativos').update(ativoData).eq('id', existing.id);
+                if (error) throw new Error(error.message);
+                return existing.id;
+            }
+            const { data, error } = await supabase.from('ativos').insert(ativoData).select('id').single();
+            if (error) throw new Error(error.message);
+            return data.id;
+        }
+
+        function toggleResponsavelFields() {
+            const same = document.getElementById('t_mesmo_responsavel').checked;
+            document.getElementById('t_responsavel_fields').style.display = same ? 'none' : '';
+        }
+        window.toggleResponsavelFields = toggleResponsavelFields;
+
+        function openTermoModal() {
+            document.getElementById('termoModal').classList.add('active');
+        }
+        function closeTermoModal() {
+            document.getElementById('termoModal').classList.remove('active');
+            document.querySelectorAll('#termoModal form')[0].reset();
+            document.getElementById('t_responsavel_fields').style.display = 'none';
+        }
+        window.openTermoModal = openTermoModal;
+        window.closeTermoModal = closeTermoModal;
+
+        async function saveTermo(e) {
+            e.preventDefault();
+            const btn = document.querySelector('#termoModal .btn-save');
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Salvando...';
+            btn.disabled = true;
+
+            try {
+                const propCidadeUf = splitCidadeUf(document.getElementById('t_prop_cidade_uf').value);
+                const proprietarioData = {
+                    nome: cleanStr(document.getElementById('t_prop_nome').value),
+                    cpf: cleanDigits(document.getElementById('t_prop_cpf').value),
+                    rg: cleanStr(document.getElementById('t_prop_rg').value),
+                    genero: cleanStr(document.getElementById('t_prop_genero').value),
+                    estado_civil: cleanStr(document.getElementById('t_prop_estado_civil').value),
+                    nacionalidade: cleanStr(document.getElementById('t_prop_nacionalidade').value),
+                    profissao: cleanStr(document.getElementById('t_prop_profissao').value),
+                    endereco: cleanStr(document.getElementById('t_prop_endereco').value),
+                    bairro: cleanStr(document.getElementById('t_prop_bairro').value),
+                    cidade: propCidadeUf.cidade,
+                    estado: propCidadeUf.estado,
+                };
+                if (!proprietarioData.nome) throw new Error('Nome do proprietário é obrigatório');
+                const proprietarioId = await upsertPessoa(proprietarioData);
+
+                let responsavelId = proprietarioId;
+                if (!document.getElementById('t_mesmo_responsavel').checked) {
+                    const respNome = cleanStr(document.getElementById('t_resp_nome').value);
+                    if (!respNome) throw new Error('Nome do responsável é obrigatório');
+                    const respCidadeUf = splitCidadeUf(document.getElementById('t_resp_cidade_uf').value);
+                    responsavelId = await upsertPessoa({
+                        nome: respNome,
+                        cpf: cleanDigits(document.getElementById('t_resp_cpf').value),
+                        rg: cleanStr(document.getElementById('t_resp_rg').value),
+                        genero: cleanStr(document.getElementById('t_resp_genero').value),
+                        estado_civil: cleanStr(document.getElementById('t_resp_estado_civil').value),
+                        nacionalidade: cleanStr(document.getElementById('t_resp_nacionalidade').value),
+                        profissao: cleanStr(document.getElementById('t_resp_profissao').value),
+                        endereco: cleanStr(document.getElementById('t_resp_endereco').value),
+                        bairro: cleanStr(document.getElementById('t_resp_bairro').value),
+                        cidade: respCidadeUf.cidade,
+                        estado: respCidadeUf.estado,
+                    });
+                }
+
+                const placa = cleanStr(document.getElementById('t_placa').value);
+                if (!placa) throw new Error('Placa é obrigatória');
+                const ativoId = await upsertAtivo({
+                    tipo: 'VEICULO',
+                    proprietario_id: proprietarioId,
+                    fabricante: cleanStr(document.getElementById('t_fabricante').value),
+                    modelo: cleanStr(document.getElementById('t_modelo').value),
+                    ano_fabricacao_modelo: cleanStr(document.getElementById('t_ano').value),
+                    placa: placa.toUpperCase(),
+                    cor: cleanStr(document.getElementById('t_cor').value),
+                    chassi: cleanStr(document.getElementById('t_chassi').value),
+                    renavam: cleanDigits(document.getElementById('t_renavam').value),
+                });
+
+                const { error: contratoError } = await supabase.from('contratos').insert({
+                    tipo_contrato: 'TERMO_DE_RESPONSABILIDADE',
+                    proprietario_id: proprietarioId,
+                    responsavel_id: responsavelId,
+                    ativo_id: ativoId,
+                    data_registro: new Date().toISOString(),
+                });
+                if (contratoError) throw new Error(contratoError.message);
+
+                closeTermoModal();
+                await loadContratos();
+                alert('✅ Termo registrado com sucesso!');
+            } catch (error) {
+                console.error('❌ Erro ao salvar termo:', error);
+                alert('Erro: ' + error.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+        window.saveTermo = saveTermo;
+
+        async function deleteContrato(id) {
+            if (!confirm('Excluir este termo? Essa ação não pode ser desfeita.')) return;
+            try {
+                const { error } = await supabase.from('contratos').delete().eq('id', id);
+                if (error) throw new Error(error.message);
+                await loadContratos();
+            } catch (error) {
+                console.error('❌ Erro ao excluir termo:', error);
+                alert('Erro ao excluir: ' + error.message);
+            }
+        }
+        window.deleteContrato = deleteContrato;
+
+        async function loadContratos() {
+            const container = document.getElementById('termoRows');
+            try {
+                const { data: contratos, error } = await supabase
+                    .from('contratos')
+                    .select(`
+                        id, data_registro,
+                        proprietario:pessoas!contratos_proprietario_id_fkey(nome, cpf),
+                        responsavel:pessoas!contratos_responsavel_id_fkey(nome, cpf),
+                        ativo:ativos!contratos_ativo_id_fkey(placa, modelo, fabricante, cor)
+                    `)
+                    .order('data_registro', { ascending: false });
+
+                if (error) throw new Error(error.message);
+
+                document.getElementById('termoCount').textContent = (contratos || []).length + ' registro' + (contratos.length !== 1 ? 's' : '');
+
+                if (!contratos || contratos.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div>Nenhum termo registrado ainda</div></div>';
+                    return;
+                }
+
+                container.innerHTML = contratos.map(c => {
+                    const dataFmt = c.data_registro ? new Date(c.data_registro).toLocaleDateString('pt-BR') : '-';
+                    const veiculo = c.ativo ? `${escapeHtml(c.ativo.fabricante) || ''} ${escapeHtml(c.ativo.modelo) || ''}`.trim() : '-';
+                    return `<div class="contrato-card">
+                        <div class="contrato-info">
+                            <b>${escapeHtml(c.ativo?.placa) || '-'}</b> · ${veiculo || '-'} ${c.ativo?.cor ? '(' + escapeHtml(c.ativo.cor) + ')' : ''}
+                            <span class="subtext">👤 Proprietário: ${escapeHtml(c.proprietario?.nome) || '-'}</span>
+                            <span class="subtext">🧾 Responsável: ${escapeHtml(c.responsavel?.nome) || '-'}</span>
+                            <span class="subtext">📅 ${dataFmt}</span>
+                        </div>
+                        <button class="btn-delete" onclick="deleteContrato('${c.id}')" title="Excluir">🗑️</button>
+                    </div>`;
+                }).join('');
+            } catch (error) {
+                console.error('❌ Erro ao carregar termos:', error);
+                container.innerHTML = `<div class="empty-state" style="color:#ef4444;">⚠️ ${error.message}</div>`;
+            }
+        }
+        window.loadContratos = loadContratos;
 
         function openModal() {
             document.getElementById('modal').classList.add('active');
@@ -299,20 +1100,27 @@
 
         // Fecha modal com ESC
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Escape') { closeModal(); closeTermoModal(); }
         });
 
         // Fecha modal clicando fora
         document.getElementById('modal').addEventListener('click', (e) => {
             if (e.target.id === 'modal') closeModal();
         });
+        document.getElementById('termoModal').addEventListener('click', (e) => {
+            if (e.target.id === 'termoModal') closeTermoModal();
+        });
 
-        // Inicia o dashboard
-        console.log('🚀 Iniciando Fluxo de Caixa...');
-        loadData();
-        
-        // Atualiza a cada 30 segundos
-        setInterval(loadData, 30000);
+        // Inicia o dashboard (após desbloqueio)
+        console.log('🚀 Iniciando Painel de Controle...');
+        initLock();
+
+        // Atualiza a cada 30 segundos (só a tela ativa, quando desbloqueado)
+        setInterval(() => {
+            if (document.getElementById('appContainer').style.display === 'none') return;
+            if (document.getElementById('viewCaixa').classList.contains('active')) loadData();
+            else if (document.getElementById('viewTermos').classList.contains('active')) loadContratos();
+        }, 30000);
     </script>
 </body>
 </html>

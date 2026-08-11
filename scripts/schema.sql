@@ -1,0 +1,87 @@
+-- Schema aplicado no projeto Supabase "fluxo-de-caixa" (kihnavaovspdjnegcraj)
+-- via migration create_pessoas_ativos_contratos. Mantido aqui como referência versionada.
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- 1. PESSOAS (Proprietários, Responsáveis, Locatários)
+CREATE TABLE IF NOT EXISTS public.pessoas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cpf TEXT UNIQUE,
+    rg TEXT,
+    nome TEXT NOT NULL,
+    genero TEXT,
+    nacionalidade TEXT,
+    estado_civil TEXT,
+    profissao TEXT,
+    endereco TEXT,
+    bairro TEXT,
+    cidade TEXT,
+    estado TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pessoas_cpf ON public.pessoas(cpf);
+CREATE INDEX IF NOT EXISTS idx_pessoas_nome ON public.pessoas(nome);
+
+-- 2. ATIVOS (Veículos e Imóveis)
+CREATE TABLE IF NOT EXISTS public.ativos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT NOT NULL CHECK (tipo IN ('VEICULO', 'IMOVEL')),
+    proprietario_id UUID REFERENCES public.pessoas(id) ON DELETE SET NULL,
+
+    placa TEXT UNIQUE,
+    renavam TEXT UNIQUE,
+    chassi TEXT UNIQUE,
+    fabricante TEXT,
+    modelo TEXT,
+    ano_fabricacao_modelo TEXT,
+    cor TEXT,
+
+    inscricao_imobiliaria TEXT,
+    endereco_imovel TEXT,
+    detalhes_imovel JSONB,
+
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ativos_placa ON public.ativos(placa);
+CREATE INDEX IF NOT EXISTS idx_ativos_renavam ON public.ativos(renavam);
+
+-- 3. CONTRATOS / TERMOS DE RESPONSABILIDADE
+CREATE TABLE IF NOT EXISTS public.contratos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo_contrato TEXT NOT NULL DEFAULT 'TERMO_DE_RESPONSABILIDADE',
+    proprietario_id UUID NOT NULL REFERENCES public.pessoas(id) ON DELETE CASCADE,
+    responsavel_id UUID NOT NULL REFERENCES public.pessoas(id) ON DELETE CASCADE,
+    ativo_id UUID NOT NULL REFERENCES public.ativos(id) ON DELETE CASCADE,
+    data_registro TIMESTAMPTZ NOT NULL,
+    observacoes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contratos_proprietario ON public.contratos(proprietario_id);
+CREATE INDEX IF NOT EXISTS idx_contratos_responsavel ON public.contratos(responsavel_id);
+CREATE INDEX IF NOT EXISTS idx_contratos_ativo ON public.contratos(ativo_id);
+
+ALTER TABLE public.pessoas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ativos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contratos ENABLE ROW LEVEL SECURITY;
+
+-- Políticas RLS: mesmo padrão usado em public.entries (acesso liberado ao anon,
+-- sem Supabase Auth ainda — o app usa só uma trava client-side de senha/biometria).
+CREATE POLICY "allow anon select" ON public.pessoas FOR SELECT TO anon USING (true);
+CREATE POLICY "allow anon insert" ON public.pessoas FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "allow anon update" ON public.pessoas FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow anon delete" ON public.pessoas FOR DELETE TO anon USING (true);
+
+CREATE POLICY "allow anon select" ON public.ativos FOR SELECT TO anon USING (true);
+CREATE POLICY "allow anon insert" ON public.ativos FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "allow anon update" ON public.ativos FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow anon delete" ON public.ativos FOR DELETE TO anon USING (true);
+
+CREATE POLICY "allow anon select" ON public.contratos FOR SELECT TO anon USING (true);
+CREATE POLICY "allow anon insert" ON public.contratos FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "allow anon update" ON public.contratos FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow anon delete" ON public.contratos FOR DELETE TO anon USING (true);
