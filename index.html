@@ -322,7 +322,7 @@
                 <button class="btn-secondary" onclick="loadResumo()">🔄 Atualizar</button>
             </div>
 
-            <div class="table-container">
+            <div class="table-container" id="fechamentoSection">
                 <div class="table-header">
                     <h3>🔒 Fechamento de Caixa</h3>
                 </div>
@@ -972,6 +972,7 @@
             { icon: '📧', label: 'Email', action: { type: 'link', url: 'https://outlook.live.com/mail/0/' } },
             { icon: '💬', label: 'WhatsApp', action: { type: 'link', url: 'https://web.whatsapp.com/' } },
             { icon: '💰', label: 'Financeiro', action: { type: 'view', view: 'caixa' } },
+            { icon: '🔒', label: 'Fechamento', action: { type: 'view', view: 'caixa', scrollTo: 'fechamentoSection' } },
         ];
 
         // Sub-painéis extraídos das abas "PAINEL X" da planilha original — cada um é
@@ -1097,14 +1098,28 @@
             if (item.action.type === 'link') {
                 window.open(item.action.url, '_blank', 'noopener');
             } else if (item.action.type === 'view') {
-                openView(item.action.view);
+                openView(item.action.view, item.action.scrollTo);
             } else if (item.action.type === 'sub') {
                 openSubPanel(item.action.key);
             }
         }
         window.handleMenuClick = handleMenuClick;
 
-        function openView(view) {
+        function scrollToSection(scrollTo) {
+            if (!scrollTo) return;
+            // Espera o layout assentar (dados carregados de forma assíncrona
+            // mudam a altura da página) antes de rolar até a seção certa.
+            let tentativas = 0;
+            const tentar = () => {
+                const el = document.getElementById(scrollTo);
+                if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+                tentativas++;
+                if (tentativas < 4) setTimeout(tentar, 350);
+            };
+            setTimeout(tentar, 100);
+        }
+
+        function openView(view, scrollTo) {
             document.getElementById('viewHome').classList.remove('active');
             document.getElementById('viewSub').classList.remove('active');
             document.getElementById('viewCaixa').classList.toggle('active', view === 'caixa');
@@ -1116,6 +1131,7 @@
                 else if (view === 'termos') loadContratos();
                 else if (view === 'curriculo') loadCurriculos();
             }
+            scrollToSection(scrollTo);
         }
 
         function openSubPanel(key) {
