@@ -176,3 +176,40 @@ CREATE POLICY "allow anon select" ON public.despesas_fixas FOR SELECT TO anon US
 CREATE POLICY "allow anon insert" ON public.despesas_fixas FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "allow anon update" ON public.despesas_fixas FOR UPDATE TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "allow anon delete" ON public.despesas_fixas FOR DELETE TO anon USING (true);
+
+-- ============================================================
+-- Currículo: pedidos de cliente (formulário de 93 perguntas na planilha
+-- original). Campos centrais viram colunas; o resto (escolaridade, cursos,
+-- experiências, referências, CNH etc) fica em JSONB — normalizar cada grupo
+-- repetido (até 5 cursos, até 4 empresas) não compensa pro volume atual.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.curriculos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome TEXT NOT NULL,
+    sobrenome TEXT,
+    data_nascimento DATE,
+    genero TEXT,
+    nacionalidade TEXT,
+    estado_civil TEXT,
+    telefone TEXT,
+    whatsapp TEXT,
+    email TEXT,
+    endereco TEXT,
+    bairro TEXT,
+    cidade TEXT,
+    estado TEXT,
+    status TEXT NOT NULL DEFAULT 'PENDENTE' CHECK (status IN ('PENDENTE', 'FEITO')),
+    dados JSONB,
+    data_pedido TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_curriculos_status ON public.curriculos(status);
+CREATE INDEX IF NOT EXISTS idx_curriculos_nome ON public.curriculos(nome);
+
+ALTER TABLE public.curriculos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow anon select" ON public.curriculos FOR SELECT TO anon USING (true);
+CREATE POLICY "allow anon insert" ON public.curriculos FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "allow anon update" ON public.curriculos FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow anon delete" ON public.curriculos FOR DELETE TO anon USING (true);

@@ -342,6 +342,36 @@
                 <div id="subLinks" class="link-list"></div>
             </div>
         </div>
+
+        <div class="view" id="viewCurriculo">
+            <button class="back-btn" onclick="goHome()">← Menu</button>
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>📄 Pedidos de Currículo</h3>
+                    <span class="table-count" id="curriculoCount">0 registros</span>
+                </div>
+                <div class="link-row" style="cursor:pointer;" onclick="window.open('https://forms.gle/davEvSQfJrXt7jxL6', '_blank', 'noopener')">
+                    <span>📝 Link do formulário pro cliente preencher</span>
+                    <span class="arrow">↗</span>
+                </div>
+                <div id="curriculoRows">
+                    <div class="empty-state"><div class="empty-icon">📭</div><div>Carregando...</div></div>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn-secondary" onclick="loadCurriculos()">🔄 Atualizar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="fichaCurriculoModal">
+        <div class="modal-content wide">
+            <h2 id="fichaTitulo">📄 Ficha do Currículo</h2>
+            <div id="fichaConteudo" style="font-size:14px; color:var(--text-dim); line-height:1.6;"></div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" onclick="closeFichaModal()">Fechar</button>
+            </div>
+        </div>
     </div>
 
     <div class="modal" id="modal">
@@ -892,7 +922,7 @@
         // Só os módulos já migrados pro Supabase (financeiro, contratos) e os links
         // externos reais têm ação; o resto fica marcado "em breve" até serem migrados.
         const MENU_ITEMS = [
-            { icon: '📄', label: 'Currículo', action: { type: 'sub', key: 'curriculo' } },
+            { icon: '📄', label: 'Currículo', action: { type: 'view', view: 'curriculo' } },
             { icon: '📝', label: 'Declaração', action: { type: 'sub', key: 'declaracao' } },
             { icon: '✂️', label: 'Tirar Fundo', action: { type: 'link', url: 'https://www.remove.bg/pt-br' } },
             { icon: '📑', label: 'Contratos', action: { type: 'view', view: 'termos' } },
@@ -1045,10 +1075,12 @@
             document.getElementById('viewSub').classList.remove('active');
             document.getElementById('viewCaixa').classList.toggle('active', view === 'caixa');
             document.getElementById('viewTermos').classList.toggle('active', view === 'termos');
+            document.getElementById('viewCurriculo').classList.toggle('active', view === 'curriculo');
             if (!viewsInitialized[view]) {
                 viewsInitialized[view] = true;
                 if (view === 'caixa') { loadData(); loadPix(); loadSaidas(); loadResumo(); }
                 else if (view === 'termos') loadContratos();
+                else if (view === 'curriculo') loadCurriculos();
             }
         }
 
@@ -1073,6 +1105,7 @@
             document.getElementById('viewCaixa').classList.remove('active');
             document.getElementById('viewTermos').classList.remove('active');
             document.getElementById('viewSub').classList.remove('active');
+            document.getElementById('viewCurriculo').classList.remove('active');
             document.getElementById('viewHome').classList.add('active');
         }
         window.goHome = goHome;
@@ -1565,6 +1598,78 @@
         }
         window.loadResumo = loadResumo;
 
+        // ===== Currículo (pedidos de cliente) =====
+        let curriculosCache = [];
+
+        async function toggleCurriculoStatus(id, novoStatus) {
+            const { error } = await supabase.from('curriculos').update({ status: novoStatus }).eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            await loadCurriculos();
+        }
+        window.toggleCurriculoStatus = toggleCurriculoStatus;
+
+        async function deleteCurriculo(id) {
+            if (!confirm('Excluir este pedido de currículo?')) return;
+            const { error } = await supabase.from('curriculos').delete().eq('id', id);
+            if (error) { alert('Erro ao excluir: ' + error.message); return; }
+            await loadCurriculos();
+        }
+        window.deleteCurriculo = deleteCurriculo;
+
+        function openFichaModal(id) {
+            const c = curriculosCache.find(x => x.id === id);
+            if (!c) return;
+            document.getElementById('fichaTitulo').textContent = `📄 ${c.nome} ${c.sobrenome || ''}`;
+            const dados = c.dados || {};
+            const linhas = Object.entries(dados)
+                .filter(([k, v]) => k.trim() && v !== null && v !== '')
+                .map(([k, v]) => `<p><b>${escapeHtml(k)}</b><br>${escapeHtml(String(v))}</p>`)
+                .join('');
+            document.getElementById('fichaConteudo').innerHTML = linhas || '<p>Sem detalhes adicionais.</p>';
+            document.getElementById('fichaCurriculoModal').classList.add('active');
+        }
+        window.openFichaModal = openFichaModal;
+
+        function closeFichaModal() {
+            document.getElementById('fichaCurriculoModal').classList.remove('active');
+        }
+        window.closeFichaModal = closeFichaModal;
+
+        async function loadCurriculos() {
+            const container = document.getElementById('curriculoRows');
+            try {
+                const { data: rows, error } = await supabase.from('curriculos').select('*').order('data_pedido', { ascending: false });
+                if (error) throw new Error(error.message);
+                curriculosCache = rows || [];
+
+                document.getElementById('curriculoCount').textContent = curriculosCache.length + ' registro' + (curriculosCache.length !== 1 ? 's' : '');
+
+                if (curriculosCache.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div>Nenhum pedido ainda</div></div>';
+                    return;
+                }
+
+                container.innerHTML = curriculosCache.map(c => {
+                    const feito = c.status === 'FEITO';
+                    const dataFmt = c.data_pedido ? new Date(c.data_pedido).toLocaleDateString('pt-BR') : '-';
+                    return `<div class="contrato-card">
+                        <div class="contrato-info" style="cursor:pointer;" onclick="openFichaModal('${c.id}')">
+                            <b>${escapeHtml(c.nome)} ${escapeHtml(c.sobrenome) || ''}</b>
+                            <span class="subtext">📱 ${escapeHtml(c.telefone) || '-'} · 📍 ${escapeHtml(c.cidade) || '-'} · 📅 ${dataFmt}</span>
+                            <span class="subtext">${feito ? '✅ Feito' : '⏳ Pendente'}</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                            <button class="btn-delete" onclick="toggleCurriculoStatus('${c.id}', '${feito ? 'PENDENTE' : 'FEITO'}')" title="${feito ? 'Marcar como pendente' : 'Marcar como feito'}">${feito ? '↩️' : '✅'}</button>
+                            <button class="btn-delete" onclick="deleteCurriculo('${c.id}')" title="Excluir">🗑️</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state" style="color:#ef4444;">⚠️ ${error.message}</div>`;
+            }
+        }
+        window.loadCurriculos = loadCurriculos;
+
         function openModal() {
             document.getElementById('modal').classList.add('active');
             document.getElementById('desc').focus();
@@ -1577,7 +1682,7 @@
 
         // Fecha modal com ESC
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') { closeModal(); closeTermoModal(); closePixModal(); closeSaidaModal(); closeDespesaFixaModal(); }
+            if (e.key === 'Escape') { closeModal(); closeTermoModal(); closePixModal(); closeSaidaModal(); closeDespesaFixaModal(); closeFichaModal(); }
         });
 
         // Fecha modal clicando fora
@@ -1595,6 +1700,9 @@
         });
         document.getElementById('despesaFixaModal').addEventListener('click', (e) => {
             if (e.target.id === 'despesaFixaModal') closeDespesaFixaModal();
+        });
+        document.getElementById('fichaCurriculoModal').addEventListener('click', (e) => {
+            if (e.target.id === 'fichaCurriculoModal') closeFichaModal();
         });
 
         // Inicia o dashboard (após desbloqueio)
